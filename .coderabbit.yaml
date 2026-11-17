@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# WhatIf FE - CodeRabbit 설정
+
+# 리뷰를 한국어로 받기
+language: "ko-KR"
+
+reviews:
+  # chill: 꼭 필요한 지적 위주로 (초보 팀이라 너무 많은 댓글 방지)
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    # 기본 브랜치(develop) 외에 main으로 가는 PR도 리뷰
+    base_branches:
+      - "main"
+      - "develop"
+
+  path_instructions:
+    - path: "src/**/*.{ts,tsx}"
+      instructions: |
+        이 프로젝트는 React + TypeScript + Vite이고, 작성자는 프론트엔드 초보입니다.
+        - 지적할 때는 왜 문제인지와 고친 코드 예시를 함께 쉬운 말로 설명해 주세요.
+        - 버그 가능성, 타입 오류, 사용하지 않는 코드, 남아 있는 console.log를 우선 확인해 주세요.
+        - API 키나 비밀번호 같은 민감한 값이 코드에 들어가 있으면 반드시 알려 주세요.
+    - path: "src/pages/**"
+      instructions: |
+        화면 문구와 동작은 팀 기능명세서(ACC·LST·INP·RES·CHT·SAV 항목)를 따릅니다.
+        금액은 만원 단위, 천 단위 쉼표 표기 규칙을 지키는지 확인해 주세요.
+    - path: "src/{App.tsx,index.css,App.css,types/**,components/layout/**}"
+      instructions: |
+        여러 화면이 함께 쓰는 공용 파일입니다. 이 파일이 바뀐 PR이면
+        다른 화면에 영향이 없는지 꼭 짚어 주세요.
+
+chat:
+  auto_reply: true
