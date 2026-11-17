@@ -1,0 +1,341 @@
+/* 최소한의 레이아웃 스타일. 디자인 시스템이 잡히면 전체 교체 예정 (지금은 기능 확인용) */
+
+.page {
+  min-height: 100vh;
+  background: #f3f6fa;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  background: #fff;
+  border-bottom: 1px solid #dce5ee;
+}
+
+.app-header__left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.app-header__logo {
+  font-weight: 700;
+  text-decoration: none;
+  color: #13294b;
+}
+
+.app-header__nav a {
+  margin-right: 16px;
+  text-decoration: none;
+  color: #13294b;
+}
+
+/* 로그인 / 회원가입 */
+.auth-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+.auth-page__intro {
+  background: #13294b;
+  color: #fff;
+  padding: 64px;
+}
+
+.auth-page__form {
+  padding: 64px;
+  max-width: 420px;
+}
+
+.auth-page__form form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-page__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.auth-page__error {
+  color: #d1453b;
+  font-size: 13px;
+}
+
+.auth-page__divider {
+  text-align: center;
+  margin: 16px 0;
+  color: #8a97a8;
+}
+
+/* 목록 (W03) */
+.futures-list {
+  padding: 32px;
+}
+
+.futures-list__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.futures-list__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.scenario-card {
+  background: #fff;
+  border: 1px solid #dce5ee;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scenario-card--new {
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+  text-decoration: none;
+  color: #13294b;
+}
+
+.scenario-card__header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.scenario-card__badge {
+  font-size: 12px;
+  background: #e8edf5;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.scenario-card__chart-placeholder {
+  height: 60px;
+  background: #eef2f7;
+  border-radius: 8px;
+}
+
+.scenario-card__amount {
+  font-size: 22px;
+  font-weight: 700;
+  color: #13294b;
+}
+
+.scenario-card__footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #8a97a8;
+}
+
+/* 새 상황 만들기 (B) */
+.new-future {
+  display: grid;
+  grid-template-columns: 200px 1fr 280px;
+  gap: 24px;
+  padding: 32px;
+}
+
+.new-future__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.new-future__step {
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #8a97a8;
+}
+
+.new-future__step.is-active {
+  background: #13294b;
+  color: #fff;
+}
+
+.new-future__form {
+  background: #fff;
+  border: 1px solid #dce5ee;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.new-future__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.new-future__period button,
+.new-future__nav button {
+  margin-right: 8px;
+}
+
+.new-future__preview {
+  background: #fff;
+  border: 1px solid #dce5ee;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.new-future__preview-placeholder {
+  height: 160px;
+  background: #eef2f7;
+  border-radius: 8px;
+}
+
+.new-event-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 결과 (C + D) */
+.future-result {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  padding: 32px;
+  position: relative;
+}
+
+.future-result__main {
+  background: #fff;
+  border: 1px solid #dce5ee;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.future-result__stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.stat-card {
+  background: #f3f6fa;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card__label {
+  font-size: 12px;
+  color: #8a97a8;
+}
+
+.stat-card__value {
+  font-size: 18px;
+  color: #13294b;
+}
+
+.future-result__saving {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.future-result__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-chat-panel {
+  position: fixed;
+  right: 32px;
+  top: 100px;
+  width: 320px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #dce5ee;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-chat-panel__header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.ai-chat-panel__badge {
+  font-size: 12px;
+  background: #e8edf5;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.ai-chat-panel__suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-chat-panel__input {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(19, 41, 75, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal__warning {
+  background: #fdeceb;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.button--primary {
+  background: #13294b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  text-decoration: none;
+}
