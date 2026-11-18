@@ -2,6 +2,8 @@ import type { Future, FutureEvent, FutureGoal } from "../types/future";
 import type { ApiEnvelope } from "../types/api";
 import { ApiError } from "../types/api";
 import { mockFutures } from "../mocks/futures";
+import { readLocalFutures } from "../hooks/useLocalFutures";
+import { simulate } from "../lib/simulate";
 
 // 백엔드 API 명세(API 명세서, 15개 엔드포인트, 전부 "시작 전") 기준 실제 경로/형식.
 // USE_MOCK=false로 바꾸면 이 파일 안쪽만 고치면 되고, 페이지/컴포넌트는 그대로 둘 수 있음.
@@ -27,13 +29,16 @@ function newIdempotencyKey(): string {
 
 /** 05. 상황 목록 조회 — GET /api/v1/scenarios */
 export async function fetchFutures(): Promise<Future[]> {
-  if (USE_MOCK) return Promise.resolve(mockFutures);
+  // mock: 예시 상황 + 이 브라우저에 저장한 상황
+  if (USE_MOCK) return Promise.resolve([...mockFutures, ...readLocalFutures()]);
   return request<Future[]>("/scenarios");
 }
 
 /** 07. 상황 열기 — GET /api/v1/scenarios/{scenarioId} (열 때마다 series/summary 재계산됨) */
 export async function fetchFutureById(id: string): Promise<Future | undefined> {
-  if (USE_MOCK) return Promise.resolve(mockFutures.find((f) => f.id === id));
+  if (USE_MOCK) {
+    return Promise.resolve([...mockFutures, ...readLocalFutures()].find((f) => f.id === id));
+  }
   return request<Future>(`/scenarios/${id}`);
 }
 
@@ -46,23 +51,21 @@ export interface CreateFutureInput {
   monthlySaving: number;
   events: FutureEvent[];
   goal?: FutureGoal;
+  goalVisible?: boolean; // 목표 표시 토글 상태 (RES-02)
+  originScenarioId?: string; // AI 대화로 만든 버전이면 출처 상황 id (LST-03)
 }
 
 /** 06. 새 상황으로 저장 — POST /api/v1/scenarios (id는 프론트에서 생성, Idempotency-Key로 중복 저장 방지) */
 export async function createFuture(input: CreateFutureInput): Promise<Future> {
   const id = crypto.randomUUID();
   if (USE_MOCK) {
-    const series = buildMockSeries(input);
+    const { series, summary } = simulate(input);
     const newFuture: Future = {
       id,
       ...input,
       series,
-      summary: input.goal
-        ? {
-            shortfall: input.goal.amount - series[series.length - 1],
-            achievementRate: Math.round((series[series.length - 1] / input.goal.amount) * 100),
-          }
-        : {},
+      summary,
+      sparkline: series,
       version: 1,
       updatedAt: new Date().toISOString(),
     };
@@ -108,27 +111,4 @@ export async function deleteFuture(id: string): Promise<void> {
     throw new Error("mock 모드에서는 삭제를 지원하지 않음");
   }
   await request<void>(`/scenarios/${id}`, { method: "DELETE" });
-}
-
-function buildMockSeries(input: CreateFutureInput): number[] {
-  const { currentAsset, monthlySaving, periodMonths, startMonth, events } = input;
-  const series: number[] = [];
-  let amount = currentAsset;
-  for (let i = 0; i < periodMonths; i++) {
-    amount += monthlySaving;
-    const month = addMonths(startMonth, i + 1);
-    const eventsThisMonth = events.filter((e) => e.month === month);
-    for (const ev of eventsThisMonth) {
-      amount += ev.type === "income" ? ev.amount : -ev.amount;
-    }
-    series.push(amount);
-  }
-  return series;
-}
-
-function addMonths(yyyyMm: string, add: number): string {
-  if (!yyyyMm) return yyyyMm;
-  const [y, m] = yyyyMm.split("-").map(Number);
-  const d = new Date(y, m - 1 + add);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }

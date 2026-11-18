@@ -27,6 +27,37 @@ function writeToStorage(futures: Future[]) {
   }
 }
 
+/** 이 브라우저에 저장한 상황 목록 (훅 밖에서도 읽을 수 있게) */
+export function readLocalFutures(): Future[] {
+  return readFromStorage();
+}
+
+/** 상황 1개를 바로 저장 (같은 id면 덮어쓰기). 저장 직후 화면을 이동해도 안전하게 즉시 기록함 */
+export function saveLocalFuture(future: Future): boolean {
+  const list = readFromStorage();
+  const next = list.some((f) => f.id === future.id)
+    ? list.map((f) => (f.id === future.id ? future : f))
+    : [...list, future];
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** localStorage를 쓸 수 있는 브라우저인지 (ACC-05: 못 쓰면 '이 브라우저에만 저장' 비활성) */
+export function canUseLocalStorage(): boolean {
+  try {
+    const k = "whatif:probe";
+    localStorage.setItem(k, "1");
+    localStorage.removeItem(k);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function useLocalFutures() {
   const [futures, setFutures] = useState<Future[]>(() => readFromStorage());
 

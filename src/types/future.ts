@@ -33,6 +33,8 @@ export interface FutureSummary {
   shortfall?: number; // 만원. 목표금액 - 예상자산 (음수면 초과 달성)
   achievementRate?: number; // %
   extraSavingNeeded?: number; // 천원 단위 소수. 목표 달성을 위해 매달 추가로 필요한 저축액
+  reachMonth?: string | null; // YYYY-MM. 목표 금액에 처음 닿는 달 (못 닿으면 null)
+  dropMonths?: string[]; // YYYY-MM[]. 자산이 줄어드는 달 (INP-12 빨간 안내 박스)
 }
 
 /** 상황(Future) 1건 — scenarios 테이블 구조에 맞춘 평평한 모양 */
@@ -46,6 +48,7 @@ export interface Future {
   monthlySaving: number; // 매달 저축액 (만원)
   events: FutureEvent[];
   goal?: FutureGoal;
+  goalVisible?: boolean; // 결과 화면 '목표 표시' 토글 상태 (RES-02). 없으면 true로 취급
   // series/summary는 서버에 영구 저장되는 값이 아니라, 상황을 열 때마다
   // 계산 엔진이 저장된 조건(currentAsset/monthlySaving/events/goal)으로부터
   // 다시 계산해서 내려주는 결과값. 그래서 Future를 "저장"할 때는
@@ -56,6 +59,18 @@ export interface Future {
   originScenarioId?: FutureId; // 다른 상황을 복제/파생한 경우 원본 id (ERD: origin_scenario_id)
   version: number; // optimistic lock — 덮어쓰기 시 버전 불일치면 409 (ERD: version)
   updatedAt: string; // ISO date (KST, timestamptz)
+}
+
+/** 계산에 들어가는 조건만 모은 것 (계산 엔진 입력, 버전마다 하나씩) */
+export type ScenarioCondition = Pick<
+  Future,
+  "name" | "startMonth" | "periodMonths" | "currentAsset" | "monthlySaving" | "events" | "goal" | "goalVisible"
+>;
+
+/** 계산 엔진 결과. series[0]은 시작 월의 현재 자산, series[i]는 i개월 뒤 자산 */
+export interface SimulationResult {
+  series: number[];
+  summary: FutureSummary;
 }
 
 /** AI 대화 한 턴 */
