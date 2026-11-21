@@ -2,7 +2,7 @@ import type { Future, FutureEvent, FutureGoal } from "../types/future";
 import type { ApiEnvelope } from "../types/api";
 import { ApiError } from "../types/api";
 import { mockFutures } from "../mocks/futures";
-import { readLocalFutures } from "../hooks/useLocalFutures";
+import { readLocalFutures, removeLocalFuture } from "../hooks/useLocalFutures";
 import { simulate } from "../lib/simulate";
 
 // 백엔드 API 명세(API 명세서, 15개 엔드포인트, 전부 "시작 전") 기준 실제 경로/형식.
@@ -31,7 +31,26 @@ function newIdempotencyKey(): string {
 function getMockFutures(): Future[] {
   const byId = new Map<string, Future>();
   for (const f of [...mockFutures, ...readLocalFutures()]) byId.set(f.id, f);
-  return [...byId.values()];
+  const hidden = readHiddenExampleIds();
+  return [...byId.values()].filter((f) => !hidden.includes(f.id));
+}
+
+// 예시 상황(mocks/futures.ts)은 코드에 박혀 있어서 지울 수 없으니,
+// '삭제한 예시 id' 목록을 브라우저에 따로 적어두고 목록에서 숨김
+const HIDDEN_EXAMPLES_KEY = "whatif:hidden-examples";
+
+function readHiddenExampleIds(): string[] {
+  try {
+    const raw = localStorage.getItem(HIDDEN_EXAMPLES_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function hideExample(id: string) {
+  const ids = readHiddenExampleIds();
+  if (!ids.includes(id)) localStorage.setItem(HIDDEN_EXAMPLES_KEY, JSON.stringify([...ids, id]));
 }
 
 /** 05. 상황 목록 조회 — GET /api/v1/scenarios */
@@ -114,7 +133,9 @@ export async function renameFuture(id: string, name: string, memo?: string): Pro
 /** 10. 상황 삭제 — DELETE /api/v1/scenarios/{scenarioId} */
 export async function deleteFuture(id: string): Promise<void> {
   if (USE_MOCK) {
-    throw new Error("mock 모드에서는 삭제를 지원하지 않음");
+    removeLocalFuture(id); // 브라우저에 저장한 상황이면 지우기
+    if (mockFutures.some((f) => f.id === id)) hideExample(id); // 예시 상황이면 숨기기
+    return;
   }
   await request<void>(`/scenarios/${id}`, { method: "DELETE" });
 }

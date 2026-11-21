@@ -46,6 +46,13 @@ export function saveLocalFuture(future: Future): boolean {
   }
 }
 
+/** 이 브라우저에 저장한 상황 1개 지우기 (W03 삭제) */
+// 실패를 조용히 넘기지 않고 오류를 그대로 던짐 → 목록 화면이 "삭제하지 못했어요"를 띄우고 카드를 남김
+export function removeLocalFuture(id: string) {
+  const next = readFromStorage().filter((f) => f.id !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+}
+
 /** localStorage를 쓸 수 있는 브라우저인지 (ACC-05: 못 쓰면 '이 브라우저에만 저장' 비활성) */
 export function canUseLocalStorage(): boolean {
   try {

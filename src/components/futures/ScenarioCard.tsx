@@ -3,10 +3,11 @@ import type { Future } from "../../types/future";
 
 interface ScenarioCardProps {
   future: Future;
+  onDelete: (future: Future) => void; // 누르면 목록 화면이 확인 모달을 띄움
 }
 
 // W03 목록의 상황 카드 1개: 이름 / 목표뱃지 / 미니그래프(자리만) / 최종 자산 / 수정일 / 열기
-export function ScenarioCard({ future }: ScenarioCardProps) {
+export function ScenarioCard({ future, onDelete }: ScenarioCardProps) {
   const { name, series } = future;
   const finalAsset = series[series.length - 1];
   const hasGoal = Boolean(future.goal);
@@ -27,7 +28,12 @@ export function ScenarioCard({ future }: ScenarioCardProps) {
 
       <div className="scenario-card__footer">
         <span>수정 {new Date(future.updatedAt).toLocaleString("ko-KR")}</span>
-        <Link to={`/futures/${future.id}`}>열기</Link>
+        <div className="scenario-card__actions">
+          <button type="button" className="scenario-card__delete" onClick={() => onDelete(future)}>
+            삭제
+          </button>
+          <Link to={`/futures/${future.id}`}>열기</Link>
+        </div>
       </div>
     </div>
   );
