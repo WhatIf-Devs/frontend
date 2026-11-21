@@ -10,8 +10,10 @@ interface MonthSelectProps {
 // 무엇을 입력해야 하는지 알 수 없으므로, 연도·월 선택 상자 두 개로 대신함.
 export function MonthSelect({ value, onChange, min, max, id }: MonthSelectProps) {
   const thisYear = new Date().getFullYear();
-  const minYear = min ? Number(min.slice(0, 4)) : thisYear - 1;
-  const maxYear = max ? Number(max.slice(0, 4)) : thisYear + 10;
+  // 범위를 안 정했으면 '작년 ~ 10년 뒤'. 단, 예전에 저장한 값(예: 2024-06)이 그 밖이면 그 연도까지 넓힘
+  const selectedYear = value ? Number(value.slice(0, 4)) : thisYear;
+  const minYear = min ? Number(min.slice(0, 4)) : Math.min(thisYear - 1, selectedYear);
+  const maxYear = max ? Number(max.slice(0, 4)) : Math.max(thisYear + 10, selectedYear);
   const [year, month] = value ? value.split("-") : ["", ""];
 
   const years: number[] = [];

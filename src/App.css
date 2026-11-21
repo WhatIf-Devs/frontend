@@ -407,3 +407,9 @@
   color: #13294b;
   margin: 8px 0;
 }
+
+/* 수정 중인 이벤트 줄 표시 (INP-11) */
+.new-future__form li.is-editing {
+  font-weight: 700;
+  color: #2b5bd7;
+}

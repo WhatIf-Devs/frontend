@@ -83,13 +83,38 @@ export function NewFuturePage() {
   }, [liveCondition]);
   const preview = useMemo(() => simulate(previewCondition), [previewCondition]);
   const previewFinal = preview.series[preview.series.length - 1];
-  const hasNumbers = previewCondition.currentAsset > 0 || previewCondition.monthlySaving > 0;
+  const hasNumbers =
+    previewCondition.currentAsset > 0 ||
+    previewCondition.monthlySaving > 0 ||
+    previewCondition.events.some((ev) => ev.amount > 0) ||
+    (previewCondition.goal?.amount ?? 0) > 0;
   const previewYears = previewCondition.periodMonths / 12;
   const previewPeriod = Number.isInteger(previewYears) ? `${previewYears}년` : `${previewCondition.periodMonths}개월`;
 
   // 이벤트 시점·목표 기한은 계산 시작 다음 달부터 (INP-10, INP-13)
   const firstMonth = addMonths(startMonth, 1);
   const lastMonth = addMonths(startMonth, periodMonths);
+
+  // 시작월을 바꾸면 이미 고른 목표 기한이 범위 밖이 될 수 있음 → 결과 보기 막고 안내
+  const goalDeadlineMax = addMonths(startMonth, 120);
+  const invalidGoalDeadline =
+    hasGoal && goal.deadline !== "" && (goal.deadline < firstMonth || goal.deadline > goalDeadlineMax);
+
+  // 이벤트 수정·삭제 (INP-11)
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const editingEvent = events.find((ev) => ev.id === editingEventId);
+  const submitEvent = (ev: FutureEvent) => {
+    if (editingEventId) {
+      setEvents((prev) => prev.map((item) => (item.id === ev.id ? ev : item)));
+      setEditingEventId(null);
+    } else {
+      setEvents((prev) => [...prev, ev]);
+    }
+  };
+  const removeEvent = (id: string) => {
+    setEvents((prev) => prev.filter((ev) => ev.id !== id));
+    if (editingEventId === id) setEditingEventId(null);
+  };
 
   // W05 '건너뛰기'·'다음': 목표가 있으면 W06, 없으면 바로 결과 (INP-13)
   const afterEvents = () => (hasGoal ? setStep(3) : handleFinish());
@@ -173,17 +198,26 @@ export function NewFuturePage() {
               <h2>예정된 수입·지출이 있나요?</h2>
               <ul>
                 {events.map((ev) => (
-                  <li key={ev.id}>
+                  <li key={ev.id} className={ev.id === editingEventId ? "is-editing" : ""}>
                     {ev.name} · {ev.type === "income" ? "+" : "-"}
                     {ev.amount.toLocaleString()}만원 · {ev.month.replace("-", "년 ")}월
                     {ev.repeat === "monthly" ? "부터 매달" : " · 한 번"}
+                    <button type="button" onClick={() => setEditingEventId(ev.id)}>
+                      수정
+                    </button>
+                    <button type="button" onClick={() => removeEvent(ev.id)}>
+                      삭제
+                    </button>
                   </li>
                 ))}
               </ul>
               <NewEventForm
+                key={editingEventId ?? "new"} // 수정할 이벤트가 바뀌면 폼을 새로 채움
+                initial={editingEvent}
                 minMonth={firstMonth}
                 maxMonth={lastMonth}
-                onAdd={(ev) => setEvents((prev) => [...prev, ev])}
+                onSubmit={submitEvent}
+                onCancel={editingEventId ? () => setEditingEventId(null) : undefined}
               />
               <div className="new-future__nav">
                 <button type="button" onClick={goBack}>
@@ -222,7 +256,7 @@ export function NewFuturePage() {
                       value={goal.deadline}
                       onChange={(v) => setGoal({ ...goal, deadline: v })}
                       min={firstMonth}
-                      max={addMonths(startMonth, 120)}
+                      max={goalDeadlineMax}
                     />
                   </label>
                 </>
@@ -233,7 +267,10 @@ export function NewFuturePage() {
                 <button type="button" onClick={goBack}>
                   이전
                 </button>
-                <button type="button" onClick={handleFinish}>
+                {invalidGoalDeadline && (
+                  <p role="alert">목표 기한을 계산 시작 다음 달 이후로 다시 선택해 주세요.</p>
+                )}
+                <button type="button" onClick={handleFinish} disabled={invalidGoalDeadline}>
                   결과 보기
                 </button>
               </div>
@@ -275,18 +312,20 @@ export function NewFuturePage() {
 }
 
 interface NewEventFormProps {
+  initial?: FutureEvent; // 있으면 '수정' 모드: 값이 채워지고 버튼이 '저장'으로
   minMonth: string; // 계산 시작 다음 달
   maxMonth: string; // 계산 기간 마지막 달
-  onAdd: (event: FutureEvent) => void;
+  onSubmit: (event: FutureEvent) => void;
+  onCancel?: () => void; // 수정 취소
 }
 
 // W05 이벤트 추가 폼 (INP-10): 이름 / 수입·지출 / 금액 / 언제 / 한 번·매달부터
-function NewEventForm({ minMonth, maxMonth, onAdd }: NewEventFormProps) {
-  const [name, setName] = useState("");
-  const [type, setType] = useState<"income" | "expense">("income");
-  const [amount, setAmount] = useState(0);
-  const [month, setMonth] = useState("");
-  const [repeat, setRepeat] = useState<FutureEventRepeat>("once");
+function NewEventForm({ initial, minMonth, maxMonth, onSubmit, onCancel }: NewEventFormProps) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [type, setType] = useState<"income" | "expense">(initial?.type ?? "income");
+  const [amount, setAmount] = useState(initial?.amount ?? 0);
+  const [month, setMonth] = useState(initial?.month ?? "");
+  const [repeat, setRepeat] = useState<FutureEventRepeat>(initial?.repeat ?? "once");
   const [formKey, setFormKey] = useState(0); // 추가한 뒤 금액칸을 비우려고 새로 그림
 
   // 이름·금액·시점 중 하나라도 비면 추가 불가 (INP-10)
@@ -294,7 +333,8 @@ function NewEventForm({ minMonth, maxMonth, onAdd }: NewEventFormProps) {
 
   const handleAdd = () => {
     if (!canAdd) return;
-    onAdd({ id: `ev-${Date.now()}`, name: name.trim(), type, amount, month, repeat });
+    // 수정이면 원래 id를 그대로 써야 목록에서 그 이벤트만 바뀜
+    onSubmit({ id: initial?.id ?? `ev-${Date.now()}`, name: name.trim(), type, amount, month, repeat });
     setName("");
     setAmount(0);
     setMonth("");
@@ -335,8 +375,13 @@ function NewEventForm({ minMonth, maxMonth, onAdd }: NewEventFormProps) {
         </button>
       </div>
       <button type="button" onClick={handleAdd} disabled={!canAdd}>
-        + 목록에 추가
+        {initial ? "저장" : "+ 목록에 추가"}
       </button>
+      {onCancel && (
+        <button type="button" onClick={onCancel}>
+          취소
+        </button>
+      )}
     </div>
   );
 }
