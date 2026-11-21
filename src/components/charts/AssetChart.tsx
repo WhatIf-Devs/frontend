@@ -11,7 +11,7 @@ import {
 import type { FutureGoal } from "../../types/future";
 
 interface AssetChartProps {
-  series: number[]; // startMonth부터 1개월 단위 예상 자산(만원)
+  series: number[]; // series[0] = 시작 월 자산, series[i] = i개월 뒤 자산(만원)
   startMonth: string; // YYYY-MM
   goal?: FutureGoal;
   height?: number;
@@ -27,7 +27,7 @@ function addMonths(yyyyMm: string, add: number): string {
 // recharts는 이미 package.json에 설치돼 있어서 바로 사용 가능.
 export function AssetChart({ series, startMonth, goal, height = 280 }: AssetChartProps) {
   const data = series.map((amount, i) => ({
-    month: addMonths(startMonth, i + 1),
+    month: addMonths(startMonth, i),
     amount,
   }));
 

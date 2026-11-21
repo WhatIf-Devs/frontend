@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "../components/layout/Header";
-import { createFuture } from "../api/futures";
+import { startWorking } from "../state/workingScenario";
+import { currentMonth } from "../lib/simulate";
 import type { FutureEvent, FutureGoal } from "../types/future";
 
 type Step = 1 | 2 | 3;
@@ -18,11 +19,6 @@ const PERIOD_OPTIONS = [
   { label: "5년", months: 60 },
 ];
 
-function currentMonth(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
 // B · 상황 입력 (기본정보 → 예정된 수입·지출 → 목표, 3단계)
 // 오른쪽에는 "입력할 때마다 바로 계산돼요" 미리보기 패널이 있지만
 // 실시간 계산 엔진 연동(POST /api/v1/simulations)이 아직 없는 지금은 자리만 잡아둠.
@@ -36,24 +32,30 @@ export function NewFuturePage() {
   const [currentAsset, setCurrentAsset] = useState(0);
   const [monthlySaving, setMonthlySaving] = useState(0);
   const [events, setEvents] = useState<FutureEvent[]>([]);
-  const [hasGoal, setHasGoal] = useState<boolean | null>(null);
+  const [hasGoal, setHasGoal] = useState<boolean>(true); // INP-06 기본값 '목표가 있어요'
   const [goal, setGoal] = useState<FutureGoal>({ name: "", amount: 0, deadline: "" });
 
   const goNext = () => setStep((s) => (s < 3 ? ((s + 1) as Step) : s));
   const goBack = () => setStep((s) => (s > 1 ? ((s - 1) as Step) : s));
 
-  const handleFinish = async () => {
-    const future = await createFuture({
-      name,
+  // 입력을 마치면 계산해서 '지금 보고 있는 상황'(V1)으로 만들고 결과 화면으로 이동.
+  // 저장은 아직 하지 않음 → 결과 화면에서 '상황 저장하기'(W10)를 눌러야 저장됨
+  const handleFinish = () => {
+    startWorking({
+      name: name.trim() || "상황 1 · 지금처럼",
       startMonth,
       periodMonths,
       currentAsset,
       monthlySaving,
       events,
       goal: hasGoal ? goal : undefined,
+      goalVisible: hasGoal,
     });
-    navigate(`/futures/${future.id}`);
+    navigate("/result");
   };
+
+  // W05 '건너뛰기'·'다음': 목표가 있으면 W06, 없으면 바로 결과 (INP-13)
+  const afterEvents = () => (hasGoal ? setStep(3) : handleFinish());
 
   return (
     <div className="page">
@@ -148,17 +150,20 @@ export function NewFuturePage() {
                 {events.map((ev) => (
                   <li key={ev.id}>
                     {ev.name} · {ev.type === "income" ? "+" : "-"}
-                    {ev.amount}만원 · {ev.month}
+                    {ev.amount.toLocaleString()}만원 · {ev.month}
                   </li>
                 ))}
               </ul>
               <NewEventForm onAdd={(ev) => setEvents((prev) => [...prev, ev])} />
               <div className="new-future__nav">
                 <button type="button" onClick={goBack}>
+                  이전
+                </button>
+                <button type="button" onClick={afterEvents}>
                   건너뛰기
                 </button>
-                <button type="button" onClick={goNext}>
-                  다음 · 목표
+                <button type="button" onClick={afterEvents}>
+                  {hasGoal ? "다음 · 목표" : "다음 · 결과 보기"}
                 </button>
               </div>
             </div>

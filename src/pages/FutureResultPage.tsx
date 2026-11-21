@@ -1,42 +1,102 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "../components/layout/Header";
 import { AssetChart } from "../components/charts/AssetChart";
 import { AIChatPanel } from "../components/result/AIChatPanel";
-import { SaveModal } from "../components/result/SaveModal";
 import { fetchFutureById } from "../api/futures";
-import { useLocalFutures } from "../hooks/useLocalFutures";
-import type { Future } from "../types/future";
+import {
+  getViewingVersion,
+  loadWorking,
+  startWorking,
+  toCondition,
+} from "../state/workingScenario";
+import type { WorkingScenario } from "../types/version";
 
-// C · 결과 + D · AI 대화·저장·금융상품 (한 화면에서 패널로 토글)
+// W07(목표 있음) · W08(목표 없음) 결과 화면 + AI 패널
+// 두 가지 경로로 들어옴:
+//  - /result       : 입력을 막 마친 상황 (sessionStorage의 '지금 보고 있는 상황')
+//  - /futures/:id  : W03에서 '열기'로 연 저장된 상황 → 불러와서 V1로 시작 (LST-05)
 export function FutureResultPage() {
   const { id } = useParams<{ id: string }>();
-  const [future, setFuture] = useState<Future | null>(null);
+  const navigate = useNavigate();
+  const [working, setWorking] = useState<WorkingScenario | null>(() => (id ? null : loadWorking()));
+  const [loadFailed, setLoadFailed] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const { saveFuture } = useLocalFutures();
-
-  // TODO: 실제 로그인 상태 연동 (지금은 항상 비로그인으로 가정해 저장 모달 플로우를 보여줌)
-  const isLoggedIn = false;
 
   useEffect(() => {
     if (!id) return;
-    fetchFutureById(id).then((f) => setFuture(f ?? null));
+    let ignored = false; // 다른 상황으로 이동했으면 이전 응답은 버림
+    fetchFutureById(id)
+      .then((f) => {
+        if (ignored) return;
+        if (!f) {
+          setLoadFailed(true);
+          return;
+        }
+        setWorking(startWorking(toCondition(f), { id: f.id, name: f.name }));
+      })
+      .catch(() => {
+        if (!ignored) setLoadFailed(true);
+      });
+    return () => {
+      ignored = true;
+    };
   }, [id]);
 
-  if (!future) return <p>불러오는 중...</p>;
+  if (loadFailed) {
+    return (
+      <div className="page">
+        <Header />
+        <main className="future-result">
+          <p>결과를 불러오지 못했어요.</p>
+          <Link to="/futures">내 미래로 돌아가기</Link>
+        </main>
+      </div>
+    );
+  }
 
-  const { goal, summary, series } = future;
+  if (!working) {
+    // /result로 바로 들어왔는데 계산된 상황이 없을 때 (새 탭 등)
+    if (!id) {
+      return (
+        <div className="page">
+          <Header />
+          <main className="future-result">
+            <p>아직 계산한 결과가 없어요.</p>
+            <Link to="/futures/new">새 상황 만들기</Link>
+          </main>
+        </div>
+      );
+    }
+    return <p>불러오는 중...</p>;
+  }
+
+  const viewing = getViewingVersion(working);
+  const condition = viewing.condition;
+  const { series, summary } = viewing.result;
+  const goal = condition.goalVisible === false ? undefined : condition.goal;
   const hasGoal = Boolean(goal);
-  const finalAsset = series[series.length - 1] ?? future.currentAsset;
-  const diffFromNow = finalAsset - future.currentAsset;
+  const finalAsset = series[series.length - 1] ?? condition.currentAsset;
+  const diffFromNow = finalAsset - condition.currentAsset;
+  const years = condition.periodMonths / 12;
+  const periodLabel = Number.isInteger(years) ? `${years}년` : `${condition.periodMonths}개월`;
+
+  let headline: string;
+  if (goal && summary.shortfall !== undefined) {
+    headline =
+      summary.shortfall > 0
+        ? `${goal.name}까지 ${summary.shortfall.toLocaleString()}만원 부족해요`
+        : `${goal.name} 목표를 ${(-summary.shortfall).toLocaleString()}만원 넘겨요`;
+  } else {
+    headline = `지금처럼 모으면 ${periodLabel} 뒤 ${finalAsset.toLocaleString()}만원이 돼요`;
+  }
 
   return (
     <div className="page">
       <Header />
       <main className="future-result">
         <div className="future-result__breadcrumb">
-          <Link to="/futures">내 미래</Link> / {future.name}
+          <Link to="/futures">내 미래</Link> / {condition.name}
           <span className="scenario-card__badge">{hasGoal ? "목표 o" : "목표 x"}</span>
         </div>
 
@@ -47,40 +107,35 @@ export function FutureResultPage() {
             </div>
           )}
 
-          <h1>
-            {hasGoal
-              ? summary.shortfall !== undefined && summary.shortfall > 0
-                ? `${goal!.name}까지 ${summary.shortfall.toLocaleString()}만원 부족해요`
-                : `${goal!.name} 목표를 달성해요`
-              : `지금처럼 모으면 ${finalAsset.toLocaleString()}만원이 돼요`}
-          </h1>
+          <h1>{headline}</h1>
 
           <div className="future-result__stats">
-            {hasGoal ? (
+            {hasGoal && goal ? (
               <>
-                <StatCard label={`${future.periodMonths}개월 뒤 예상 자산`} value={`${finalAsset.toLocaleString()}만원`} />
-                <StatCard label="목표 금액" value={`${goal!.amount.toLocaleString()}만원`} />
-                <StatCard label="목표 달성률" value={summary.achievementRate !== undefined ? `${summary.achievementRate}%` : "-"} />
+                <StatCard label={`${condition.periodMonths}개월 뒤 예상 자산`} value={`${finalAsset.toLocaleString()}만원`} />
+                <StatCard label="목표 금액" value={`${goal.amount.toLocaleString()}만원`} />
+                <StatCard label="목표 달성률" value={summary.achievementRate !== undefined ? `${summary.achievementRate}%` : "—"} />
                 <StatCard
-                  label="매달 추가로 필요한 저축액"
-                  value={summary.extraSavingNeeded !== undefined ? `약 ${summary.extraSavingNeeded}만원` : "-"}
+                  label="매달 더 모으면 도달"
+                  value={summary.extraSavingNeeded !== undefined ? `약 ${summary.extraSavingNeeded.toLocaleString()}만원` : "—"}
                 />
               </>
             ) : (
               <>
                 <StatCard label="지금보다" value={`${diffFromNow >= 0 ? "+" : ""}${diffFromNow.toLocaleString()}만원`} />
-                <StatCard label="매달 저축" value={`${future.monthlySaving.toLocaleString()}만원`} />
-                <StatCard label={`${future.periodMonths}개월 뒤`} value={`${finalAsset.toLocaleString()}만원`} />
+                <StatCard label="매달 저축" value={`${condition.monthlySaving.toLocaleString()}만원`} />
+                <StatCard label={`${condition.periodMonths}개월 뒤`} value={`${finalAsset.toLocaleString()}만원`} />
               </>
             )}
           </div>
 
-          <AssetChart series={series} startMonth={future.startMonth} goal={goal} />
+          <AssetChart series={series} startMonth={condition.startMonth} goal={goal} />
 
           <div className="future-result__saving">
             매달 저축액
-            <input type="range" min={0} max={100} defaultValue={future.monthlySaving} />
-            <span>{future.monthlySaving}만원</span>
+            {/* TODO(feature/result): 점선 미리보기 슬라이더 (RES-09) */}
+            <input type="range" min={0} max={100} defaultValue={condition.monthlySaving} />
+            <span>{condition.monthlySaving.toLocaleString()}만원</span>
           </div>
 
           <div className="future-result__actions">
@@ -89,7 +144,8 @@ export function FutureResultPage() {
             <button type="button" onClick={() => setShowAIPanel((v) => !v)}>
               AI에게 물어보기
             </button>
-            <button type="button" className="button--primary" onClick={() => setShowSaveModal(true)}>
+            {/* W10 저장 화면으로 이동. 저장할 버전은 getSaveTarget()으로 W10이 직접 읽음 */}
+            <button type="button" className="button--primary" onClick={() => navigate("/save")}>
               상황 저장하기
             </button>
           </div>
@@ -97,17 +153,6 @@ export function FutureResultPage() {
 
         {showAIPanel && <AIChatPanel onClose={() => setShowAIPanel(false)} />}
       </main>
-
-      {showSaveModal && (
-        <SaveModal
-          isLoggedIn={isLoggedIn}
-          onClose={() => setShowSaveModal(false)}
-          onSaveLocal={() => {
-            saveFuture(future);
-            setShowSaveModal(false);
-          }}
-        />
-      )}
     </div>
   );
 }
