@@ -27,17 +27,23 @@ function newIdempotencyKey(): string {
   return crypto.randomUUID();
 }
 
+/** mock: 예시 상황 + 이 브라우저에 저장한 상황. 같은 id면 브라우저 저장본(최신)이 우선 */
+function getMockFutures(): Future[] {
+  const byId = new Map<string, Future>();
+  for (const f of [...mockFutures, ...readLocalFutures()]) byId.set(f.id, f);
+  return [...byId.values()];
+}
+
 /** 05. 상황 목록 조회 — GET /api/v1/scenarios */
 export async function fetchFutures(): Promise<Future[]> {
-  // mock: 예시 상황 + 이 브라우저에 저장한 상황
-  if (USE_MOCK) return Promise.resolve([...mockFutures, ...readLocalFutures()]);
+  if (USE_MOCK) return Promise.resolve(getMockFutures());
   return request<Future[]>("/scenarios");
 }
 
 /** 07. 상황 열기 — GET /api/v1/scenarios/{scenarioId} (열 때마다 series/summary 재계산됨) */
 export async function fetchFutureById(id: string): Promise<Future | undefined> {
   if (USE_MOCK) {
-    return Promise.resolve([...mockFutures, ...readLocalFutures()].find((f) => f.id === id));
+    return Promise.resolve(getMockFutures().find((f) => f.id === id));
   }
   return request<Future>(`/scenarios/${id}`);
 }

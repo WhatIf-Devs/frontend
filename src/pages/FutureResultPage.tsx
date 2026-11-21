@@ -25,15 +25,22 @@ export function FutureResultPage() {
 
   useEffect(() => {
     if (!id) return;
+    let ignored = false; // 다른 상황으로 이동했으면 이전 응답은 버림
     fetchFutureById(id)
       .then((f) => {
+        if (ignored) return;
         if (!f) {
           setLoadFailed(true);
           return;
         }
         setWorking(startWorking(toCondition(f), { id: f.id, name: f.name }));
       })
-      .catch(() => setLoadFailed(true));
+      .catch(() => {
+        if (!ignored) setLoadFailed(true);
+      });
+    return () => {
+      ignored = true;
+    };
   }, [id]);
 
   if (loadFailed) {
@@ -110,7 +117,7 @@ export function FutureResultPage() {
                 <StatCard label="목표 달성률" value={summary.achievementRate !== undefined ? `${summary.achievementRate}%` : "—"} />
                 <StatCard
                   label="매달 더 모으면 도달"
-                  value={summary.extraSavingNeeded !== undefined ? `약 ${summary.extraSavingNeeded}만원` : "—"}
+                  value={summary.extraSavingNeeded !== undefined ? `약 ${summary.extraSavingNeeded.toLocaleString()}만원` : "—"}
                 />
               </>
             ) : (
@@ -128,7 +135,7 @@ export function FutureResultPage() {
             매달 저축액
             {/* TODO(feature/result): 점선 미리보기 슬라이더 (RES-09) */}
             <input type="range" min={0} max={100} defaultValue={condition.monthlySaving} />
-            <span>{condition.monthlySaving}만원</span>
+            <span>{condition.monthlySaving.toLocaleString()}만원</span>
           </div>
 
           <div className="future-result__actions">

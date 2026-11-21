@@ -5,7 +5,7 @@
 export type FutureId = string; // uuid, 프론트엔드에서 생성해서 서버로 보냄
 
 export type FutureEventType = "income" | "expense";
-export type FutureEventRepeat = "once" | "monthly" | "yearly";
+export type FutureEventRepeat = "once" | "monthly"; // API 명세·ERD 기준 두 가지
 
 /** 예정된 수입/지출 이벤트. id는 varchar(64), 프론트엔드에서 생성 */
 export interface FutureEvent {

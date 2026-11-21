@@ -150,12 +150,15 @@ export function NewFuturePage() {
                 {events.map((ev) => (
                   <li key={ev.id}>
                     {ev.name} · {ev.type === "income" ? "+" : "-"}
-                    {ev.amount}만원 · {ev.month}
+                    {ev.amount.toLocaleString()}만원 · {ev.month}
                   </li>
                 ))}
               </ul>
               <NewEventForm onAdd={(ev) => setEvents((prev) => [...prev, ev])} />
               <div className="new-future__nav">
+                <button type="button" onClick={goBack}>
+                  이전
+                </button>
                 <button type="button" onClick={afterEvents}>
                   건너뛰기
                 </button>
