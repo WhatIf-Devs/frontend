@@ -46,6 +46,11 @@ export function saveLocalFuture(future: Future): boolean {
   }
 }
 
+/** 이 브라우저에 저장한 상황 1개 지우기 (W03 삭제) */
+export function removeLocalFuture(id: string) {
+  writeToStorage(readFromStorage().filter((f) => f.id !== id));
+}
+
 /** localStorage를 쓸 수 있는 브라우저인지 (ACC-05: 못 쓰면 '이 브라우저에만 저장' 비활성) */
 export function canUseLocalStorage(): boolean {
   try {

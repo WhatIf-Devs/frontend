@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "../components/layout/Header";
 import { AssetChart } from "../components/charts/AssetChart";
 import { AIChatPanel } from "../components/result/AIChatPanel";
+import { ConfirmModal } from "../components/common/ConfirmModal";
 import { fetchFutureById } from "../api/futures";
 import {
   getViewingVersion,
@@ -10,7 +11,7 @@ import {
   startWorking,
   toCondition,
 } from "../state/workingScenario";
-import type { WorkingScenario } from "../types/version";
+import type { EditRequest, WorkingScenario } from "../types/version";
 
 // W07(목표 있음) · W08(목표 없음) 결과 화면 + AI 패널
 // 두 가지 경로로 들어옴:
@@ -22,6 +23,7 @@ export function FutureResultPage() {
   const [working, setWorking] = useState<WorkingScenario | null>(() => (id ? null : loadWorking()));
   const [loadFailed, setLoadFailed] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
+  const [pendingEditStep, setPendingEditStep] = useState<2 | 3 | null>(null); // 버전이 사라진다는 확인 중
 
   useEffect(() => {
     if (!id) return;
@@ -80,6 +82,24 @@ export function FutureResultPage() {
   const diffFromNow = finalAsset - condition.currentAsset;
   const years = condition.periodMonths / 12;
   const periodLabel = Number.isInteger(years) ? `${years}년` : `${condition.periodMonths}개월`;
+
+  // RES-13: 이벤트·목표 수정 → 입력 화면(W05·W06)으로, 지금 조건을 채운 채로 이동
+  const goEdit = (step: 2 | 3) => {
+    const request: EditRequest = {
+      condition,
+      base: working.baseScenarioId
+        ? { id: working.baseScenarioId, name: working.baseScenarioName ?? condition.name }
+        : undefined,
+      step,
+    };
+    navigate("/futures/new", { state: { edit: request } });
+  };
+
+  // RES-02: AI 대화로 만든 버전(V2~)이 있으면 사라진다고 한 번 더 확인
+  const requestEdit = (step: 2 | 3) => {
+    if (working.versions.length > 1) setPendingEditStep(step);
+    else goEdit(step);
+  };
 
   let headline: string;
   if (goal && summary.shortfall !== undefined) {
@@ -140,7 +160,14 @@ export function FutureResultPage() {
 
           <div className="future-result__actions">
             <button type="button">조건에 맞는 예·적금 보기 (정보 제공)</button>
-            <button type="button">이벤트·목표 수정</button>
+            <button type="button" onClick={() => requestEdit(2)}>
+              이벤트·목표 수정
+            </button>
+            {!condition.goal && (
+              <button type="button" onClick={() => requestEdit(3)}>
+                + 목표 추가하기
+              </button>
+            )}
             <button type="button" onClick={() => setShowAIPanel((v) => !v)}>
               AI에게 물어보기
             </button>
@@ -153,6 +180,16 @@ export function FutureResultPage() {
 
         {showAIPanel && <AIChatPanel onClose={() => setShowAIPanel(false)} />}
       </main>
+
+      {pendingEditStep && (
+        <ConfirmModal
+          title="입력을 수정할까요?"
+          description="수정하면 AI 대화로 만든 버전은 사라지고, 지금 보고 있는 버전을 기준으로 다시 시작해요."
+          confirmLabel="수정하기"
+          onConfirm={() => goEdit(pendingEditStep)}
+          onCancel={() => setPendingEditStep(null)}
+        />
+      )}
     </div>
   );
 }

@@ -339,3 +339,71 @@
   padding: 8px 16px;
   text-decoration: none;
 }
+
+/* 확인 모달 버튼 줄 (ConfirmModal) */
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.button--danger {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+}
+
+.scenario-card__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.scenario-card__delete {
+  background: none;
+  border: none;
+  color: #c0392b;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* 금액 입력칸: 숫자 + '만원' (MoneyInput) */
+.money-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.money-input input {
+  text-align: right;
+}
+
+.money-input__unit,
+.new-event-form__label {
+  font-size: 13px;
+  color: #5b6b80;
+}
+
+/* 연·월 선택 (MonthSelect) */
+.month-select {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.new-event-form__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+/* 입력 화면 오른쪽 실시간 미리보기 (INP-07) */
+.new-future__preview-headline {
+  font-size: 18px;
+  font-weight: 700;
+  color: #13294b;
+  margin: 8px 0;
+}

@@ -21,6 +21,16 @@ export interface WorkingScenario {
 }
 
 /**
+ * 결과 화면 '이벤트·목표 수정'(RES-13) → 입력 화면으로 넘기는 값.
+ * 입력 화면은 이 조건을 미리 채운 채로 step 단계부터 보여줌.
+ */
+export interface EditRequest {
+  condition: ScenarioCondition;
+  base?: { id: string; name: string }; // 저장된 상황을 열어서 수정 중이면 그 상황 (덮어쓰기 선택지 유지)
+  step: 2 | 3; // 2 = 이벤트(W05), 3 = 목표(W06)
+}
+
+/**
  * 결과 화면 → W10 저장 화면으로 넘기는 값 (SAV-01~08).
  * W10은 getSaveTarget()으로 이 값을 읽어서 화면을 그림.
  */
