@@ -11,8 +11,18 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // [ACC-02] 로그인 버튼 활성 조건
+  // 이메일 형식: "아이디@도메인.끝자리" 모양인지 검사
+  // - 공백과 @는 한 번만, 끝자리(.com, .kr, .net 등)는 영문 2글자 이상
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(email.trim());
+  // 비밀번호: 한 글자라도 입력됐는지
+  const isPasswordFilled = password.length > 0;
+  // 둘 다 만족할 때만 로그인 버튼을 누를 수 있음
+  const canSubmit = isEmailValid && isPasswordFilled;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canSubmit) return; // 조건이 안 맞으면 Enter를 눌러도 아무 일도 안 일어남
     setError(null);
     try {
       await loginWithEmail({ email, password });
@@ -54,7 +64,9 @@ export function LoginPage() {
             />
           </label>
           {error && <p className="auth-page__error">{error}</p>}
-          <button type="submit">로그인</button>
+          <button type="submit" disabled={!canSubmit}>
+            로그인
+          </button>
         </form>
         <div className="auth-page__divider">또는</div>
         <button
