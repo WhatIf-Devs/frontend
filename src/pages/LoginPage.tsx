@@ -10,6 +10,8 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // [ACC-02] 비밀번호 보기/숨기기: true면 글자 그대로, false면 ●●●로 가림
+  const [showPassword, setShowPassword] = useState(false);
 
   // [ACC-02] 로그인 버튼 활성 조건
   // 이메일 형식: "아이디@도메인.끝자리" 모양인지 검사
@@ -56,12 +58,23 @@ export function LoginPage() {
           </label>
           <label>
             비밀번호
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="auth-password">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="auth-password__toggle"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                aria-pressed={showPassword}
+              >
+                {showPassword ? "숨기기" : "보기"}
+              </button>
+            </div>
           </label>
           {error && <p className="auth-page__error">{error}</p>}
           <button type="submit" disabled={!canSubmit}>
