@@ -5,6 +5,12 @@ import { loginWithEmail, loginWithGoogle } from "../api/auth";
 // W01 · 로그인 (첫 화면)
 // 왼쪽: 서비스 소개 + 그래프 미리보기 (디자인 작업 전까지는 텍스트로만 표시)
 // 오른쪽: 이메일/비밀번호, Google 계속하기, 로그인 없이 체험하기
+
+// 실패 문구 (기능명세서 ACC-02·03, 정책표 13장)
+// 보안을 위해 이메일이 틀렸는지 비밀번호가 틀렸는지는 구분해서 알려주지 않음
+const EMAIL_LOGIN_ERROR = "이메일 또는 비밀번호를 확인해 주세요.";
+const GOOGLE_LOGIN_ERROR = "로그인하지 못했어요. 다시 시도해 주세요.";
+
 export function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -30,7 +36,7 @@ export function LoginPage() {
       await loginWithEmail({ email, password });
       navigate("/futures");
     } catch {
-      setError("로그인에 실패했어요. 이메일/비밀번호를 확인해주세요.");
+      setError(EMAIL_LOGIN_ERROR); // 입력값은 그대로 남겨 둠
     }
   };
 
@@ -90,7 +96,8 @@ export function LoginPage() {
               await loginWithGoogle();
               navigate("/futures");
             } catch {
-              setError("Google 로그인에 실패했어요.");
+              // TODO: 토스트 컴포넌트가 생기면 토스트로 바꾸기 (ACC-03)
+              setError(GOOGLE_LOGIN_ERROR);
             }
           }}
         >
