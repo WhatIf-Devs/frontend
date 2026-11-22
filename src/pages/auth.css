@@ -1,40 +1,44 @@
 /* =========================================================
-   W01 로그인 · W02 회원가입 공용 스타일 (피그마 v4 기준)
-   - 클래스 이름은 모두 auth__ 로 시작해서 다른 화면과 겹치지 않게 함
-   - 색은 피그마 변수 이름을 그대로 따서 아래에 모아 둠
+   W01 로그인 · W02 회원가입 공용 스타일
+   - 배경: 천천히 움직이는 그라데이션 + 실시간 자산 그래프 (AuthLayout.tsx)
+   - PC: 배경 위에 반투명 유리 카드 / 모바일: 인트로 → 흰 로그인 화면
+   - 클래스 이름은 모두 auth__ 로 시작 (다른 화면과 겹치지 않게)
    ========================================================= */
 
 .auth {
-  /* 피그마 색 변수 */
+  /* 색 변수 (피그마 변수 이름 기준 + 새로 추가한 민트 포인트) */
   --auth-bg-canvas: #f3f6fa; /* bg/canvas */
   --auth-bg-surface: #ffffff; /* bg/surface */
   --auth-border: #dce5ee; /* border/default */
   --auth-text-primary: #0f2236; /* text/primary */
   --auth-text-secondary: #52667a; /* text/secondary */
   --auth-navy: #0e3a5c; /* brand/navy */
+  --auth-navy-deep: #061a2e; /* 배경 가장 어두운 색 (추가) */
   --auth-blue: #1e63b5; /* brand/blue */
   --auth-sky: #cfe2f3; /* brand/sky */
   --auth-sky-light: #eaf2fa; /* brand/sky-light */
+  --auth-mint: #6ef2c0; /* 목표 달성·상승 포인트 (추가) */
   --auth-error: #d1453b;
+  --auth-ease: cubic-bezier(0.22, 1, 0.36, 1); /* 부드럽게 멈추는 움직임 */
 
-  /* 공용 index.css의 #root(최대 1126px) 상자를 벗어나 브라우저 전체 폭을 씀.
-     position: absolute + left/right 0 = 화면 왼쪽 끝~오른쪽 끝 (스크롤바 제외).
-     팀에서 #root 설정을 고치면 이 4줄은 지워도 됨 */
+  /* 공용 index.css의 #root(최대 1126px) 상자를 벗어나 브라우저 전체를 씀.
+     팀에서 #root 설정을 고치면 position~right 4줄은 지워도 됨 */
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
 
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--auth-bg-canvas);
+  min-height: 100dvh;
+  overflow: hidden;
+  isolation: isolate; /* 배경 레이어 순서를 이 안에서만 계산 */
+  background: var(--auth-navy-deep);
   color: var(--auth-text-primary);
   font-family: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
   letter-spacing: normal;
-  word-break: keep-all; /* 한글을 글자 중간(시뮬/레이터)이 아니라 띄어쓰기에서 줄바꿈 */
-  text-align: left; /* index.css의 가운데 정렬을 이 화면에서만 끔 */
-  color-scheme: light; /* 다크 모드에서도 입력칸을 밝게 유지 */
+  word-break: keep-all; /* 한글을 띄어쓰기에서만 줄바꿈 */
+  text-align: left;
+  color-scheme: light;
 }
 
 .auth *,
@@ -43,98 +47,387 @@
   box-sizing: border-box;
 }
 
-/* ---------- 본문: PC는 2열, 스크롤 없이 한 화면 ---------- */
-/* 상단 로고 헤더는 빼기로 결정 (왼쪽 소개 카드에 로고가 있어서 중복) — 2026-11-23
-   좌우 여백: 화면이 좁으면 64px, 넓으면 내용 폭을 1280px로 두고 남는 공간을 양옆에 나눔 */
-.auth__body {
-  flex: 1;
-  display: flex;
-  align-items: stretch;
-  gap: 48px;
-  padding: clamp(24px, calc(8vh - 16px), 48px) max(64px, calc((100% - 1280px) / 2));
-}
-
-/* 왼쪽 소개 카드 */
-.auth__intro {
-  flex: 1 1 0;
-  min-width: 0; /* 내용이 길어도 카드가 넘치지 않게 */
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* 카드가 내용보다 길면 가운데로 */
-  /* 세로 간격은 화면 높이(vh)에 맞춰 자동으로 줄어듦 → 낮은 노트북 화면에서도 스크롤 없음
-     clamp(최소, 기준, 최대): 피그마 값(최대)보다 커지지 않음 */
-  gap: clamp(28px, calc(12vh - 24px), 84px);
-  padding: clamp(36px, calc(12vh - 30px), 83px) 56px clamp(32px, 5vh, 56px);
-  border-radius: 24px;
+/* =========================================================
+   1. 천천히 흐르는 배경 (피그마 소개 카드와 같은 방식)
+   - 바탕: 남색 #0E3A5C (단색, 고정)
+   - 덧칠: 검정(30%) → 민트 #8CFFC2(100%) 대각선 그라데이션을 20% 투명도로
+   - 덧칠 판만 화면보다 크게 만들어 대각선 방향으로 천천히 왕복 → "흐르는" 느낌
+   ========================================================= */
+.auth__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   overflow: hidden;
-  background:
-    linear-gradient(133deg, rgba(0, 0, 0, 0.2) 29%, rgba(140, 255, 194, 0.2) 76%),
-    var(--auth-navy);
+  background: #0e3a5c;
 }
 
-.auth__intro-text {
+.auth__flow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  /* 판이 2배 크기라 피그마의 30%→100% 구간을 판의 가운데 쪽에 배치 */
+  background: linear-gradient(133deg, #000000 0%, #000000 45%, #8cffc2 75%, #000000 100%);
+  opacity: 0.28; /* 피그마 20%보다 조금 진하게 → 흐름이 눈에 보이도록 */
+  will-change: transform; /* 그래픽카드로 움직여서 부드럽게 */
+  animation: auth-flow 14s ease-in-out infinite alternate;
+}
+
+/* 민트 띠가 화면 오른쪽 아래 → 가운데 쪽으로 들어왔다 나가는 왕복 */
+@keyframes auth-flow {
+  from {
+    transform: translate(-6%, -6%);
+  }
+  to {
+    transform: translate(16%, 16%);
+  }
+}
+
+/* 위는 어둡고 아래로 갈수록 밝아지는 검정 그라데이션 (가장 위에 덮음) */
+.auth__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(2, 10, 20, 0.62) 0%,
+    rgba(2, 10, 20, 0.38) 45%,
+    rgba(2, 10, 20, 0.12) 100%
+  );
+}
+
+/* 얇은 격자 무늬 (가장자리로 갈수록 사라짐) */
+.auth__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 35% 55%, #000 30%, transparent 80%);
+}
+
+/* =========================================================
+   2. 배치: PC는 왼쪽 소개+그래프 / 오른쪽 유리 카드
+   ========================================================= */
+.auth__stage {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 440px;
+  align-items: center;
+  gap: clamp(40px, 5vw, 96px);
+  padding: clamp(32px, 6vh, 64px) max(64px, calc((100% - 1280px) / 2));
+}
+
+.auth__hero {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: clamp(24px, 6vh, 56px);
+  min-width: 0;
+  animation: auth-fade-up 1.4s var(--auth-ease) both;
+}
+
+.auth__hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .auth__brand {
   display: block;
-  width: 203px;
+  width: clamp(140px, 13vw, 190px);
   height: auto;
 }
 
 .auth__headline {
   margin: 0;
   font-family: inherit;
-  /* 화면 폭에 맞춰 30~38px 사이에서 자동 조절 → PC에서는 한 줄 유지 */
-  font-size: clamp(30px, 2.65vw, 38px);
+  font-size: clamp(30px, 2.7vw, 42px);
   font-weight: 700;
-  line-height: 1.4;
-  letter-spacing: normal;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
   color: #ffffff;
+}
+
+.auth__br-mobile {
+  display: none;
 }
 
 .auth__desc {
   margin: 0;
-  font-size: 18px;
-  line-height: 1.45;
+  font-size: clamp(15px, 1.2vw, 18px);
+  line-height: 1.5;
   color: var(--auth-sky);
+  opacity: 0.85;
+}
+
+/* =========================================================
+   3. 실시간 그래프 (SVG)
+   ========================================================= */
+.auth__chart-wrap {
+  position: relative;
+  /* 화면 높이에 맞춰 폭 제한 → 낮은 화면에서도 스크롤 없음 (비율 720:340 ≈ 2.1) */
+  width: min(100%, 760px, calc((100vh - 330px) * 2.1));
 }
 
 .auth__chart {
   display: block;
-  /* 셋 중 가장 작은 값: 카드 폭 / 피그마 원래 폭 660px / 화면 높이에 맞춘 폭
-     (그래프 비율이 660:314 ≈ 2.1:1 이라서 높이 × 2.1 = 폭) */
-  width: min(100%, 660px, calc((100vh - 420px) * 2.1));
-  height: auto; /* 폭에 맞춰 비율 유지 */
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: inherit;
 }
 
-/* 오른쪽 로그인 카드 */
+.auth__gridlines line {
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1;
+}
+
+.auth__months text {
+  fill: rgba(207, 226, 243, 0.6);
+  font-size: 12px;
+  font-weight: 500;
+  text-anchor: middle;
+}
+
+/* 목표선: 왼쪽에서 오른쪽으로 그어짐 */
+.auth__goal-line {
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 6;
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: auth-grow-x 1.8s 0.6s var(--auth-ease) both;
+  transition: stroke 1s;
+}
+
+.auth__goal-label {
+  fill: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 700;
+  animation: auth-fade 0.9s 1.6s both;
+  transition: fill 1s;
+}
+
+.auth__goal.is-reached .auth__goal-line {
+  stroke: var(--auth-mint);
+}
+
+.auth__goal.is-reached .auth__goal-label {
+  fill: var(--auth-mint);
+}
+
+.auth__area {
+  stroke: none;
+}
+
+.auth__line,
+.auth__line-glow {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.auth__line-glow {
+  stroke: #6ef2c0;
+  stroke-width: 8;
+  opacity: 0.35;
+}
+
+/* 시작점: 두근거리듯 반짝 */
+.auth__start-dot {
+  fill: #ffffff;
+}
+
+.auth__start-ring {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: auth-pulse 1.4s ease-out 2 both;
+}
+
+/* 그래프 머리 + 실시간 금액 */
+.auth__head-halo {
+  fill: var(--auth-mint);
+  opacity: 0.25;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: auth-breathe 1.6s ease-in-out infinite;
+}
+
+.auth__head-dot {
+  fill: #ffffff;
+  stroke: var(--auth-mint);
+  stroke-width: 3;
+}
+
+.auth__head-pill {
+  fill: rgba(255, 255, 255, 0.14);
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-width: 1;
+}
+
+.auth__head-text {
+  fill: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums; /* 숫자 폭을 같게 → 바뀔 때 흔들리지 않음 */
+}
+
+/* 이벤트(성과급·노트북): 머리가 지나가면 톡 튀어나옴 */
+.auth__event {
+  opacity: 0;
+  transition: opacity 0.7s;
+}
+
+.auth__event-dot,
+.auth__event-tag {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.6);
+  transition: transform 0.8s var(--auth-ease);
+}
+
+.auth__event.is-visible {
+  opacity: 1;
+}
+
+.auth__event.is-visible .auth__event-dot,
+.auth__event.is-visible .auth__event-tag {
+  transform: scale(1);
+}
+
+.auth__event-dot {
+  fill: #ffffff;
+}
+
+.auth__event-pill {
+  fill: rgba(255, 255, 255, 0.16);
+  stroke: rgba(255, 255, 255, 0.3);
+}
+
+.auth__event-text {
+  fill: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.auth__event--expense .auth__event-pill {
+  fill: rgba(255, 120, 120, 0.2);
+  stroke: rgba(255, 150, 150, 0.45);
+}
+
+/* 목표 돌파: 퍼지는 링 2개 + 배지 */
+.auth__burst {
+  opacity: 0;
+}
+
+.auth__burst.is-visible {
+  opacity: 1;
+}
+
+.auth__burst-ring {
+  fill: none;
+  stroke: var(--auth-mint);
+  stroke-width: 2;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.auth__burst.is-visible .auth__burst-ring {
+  animation: auth-ripple 1.8s ease-out both;
+}
+
+.auth__burst.is-visible .auth__burst-ring--late {
+  animation-delay: 0.4s;
+}
+
+.auth__badge-wrap {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: translateY(-6px) scale(0.8);
+  opacity: 0;
+}
+
+.auth__burst.is-visible .auth__badge-wrap {
+  animation: auth-pop 0.9s 0.15s var(--auth-ease) both;
+}
+
+.auth__badge {
+  fill: var(--auth-mint);
+}
+
+.auth__badge-text {
+  fill: #053b2c;
+  font-size: 12px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+/* =========================================================
+   4. 로그인 카드 (PC: 반투명 유리)
+   ========================================================= */
+.auth__panel {
+  position: relative;
+  /* 배경·소개가 먼저 자리 잡은 뒤 천천히 떠오름 */
+  animation: auth-panel-in 1.8s 0.9s var(--auth-ease) both;
+}
+
+@keyframes auth-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
+    filter: blur(6px);
+  }
+}
+
+.auth__panel-logo {
+  display: none; /* 모바일 흰 화면에서만 보임 */
+}
+
 .auth__card {
-  flex: 0 0 500px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: clamp(12px, calc(3vh - 6px), 18px);
-  padding: clamp(24px, calc(13vh - 56px), 64px) 56px;
-  background: var(--auth-bg-surface);
-  border: 1px solid var(--auth-border);
-  border-radius: 24px;
+  gap: clamp(12px, calc(3vh - 8px), 16px);
+  padding: clamp(28px, calc(10vh - 40px), 48px) 40px;
+  /* 아이폰 유리 느낌: 위는 조금 더 밝고 아래로 갈수록 살짝 투명,
+     뒤 배경을 흐리게 비추고, 가장자리에 얇은 빛 테두리 */
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 28px;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.7) 55%,
+    rgba(240, 248, 250, 0.64) 100%
+  );
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  box-shadow:
+    0 24px 64px rgba(3, 16, 30, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .auth__title {
   margin: 0;
   font-family: inherit;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 700;
-  line-height: 1.45;
-  letter-spacing: normal;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
   color: var(--auth-text-primary);
 }
 
 .auth__subtitle {
-  margin: 0;
+  margin: -6px 0 4px;
   font-size: 14px;
   line-height: 1.45;
   color: var(--auth-text-secondary);
@@ -144,7 +437,7 @@
 .auth__form {
   display: flex;
   flex-direction: column;
-  gap: clamp(12px, calc(3vh - 6px), 18px);
+  gap: clamp(12px, calc(3vh - 8px), 16px);
 }
 
 .auth__field {
@@ -162,15 +455,18 @@
 
 .auth__input {
   width: 100%;
-  padding: 13px 16px;
-  border: 1px solid var(--auth-border);
-  border-radius: 10px;
-  background: var(--auth-bg-surface);
+  padding: 12px 16px;
+  border: 1px solid rgba(14, 58, 92, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.78);
   font: inherit;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 16px; /* 16px 미만이면 아이폰이 입력할 때 화면을 확대해 버림 */
+  font-weight: 600;
   line-height: 1.45;
   color: var(--auth-text-primary);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .auth__input::placeholder {
@@ -180,17 +476,17 @@
 
 .auth__input:focus {
   outline: none;
+  background: #ffffff;
   border-color: var(--auth-blue);
-  box-shadow: 0 0 0 3px rgba(30, 99, 181, 0.15);
+  box-shadow: 0 0 0 4px rgba(30, 99, 181, 0.14);
 }
 
-/* 비밀번호 칸 + 보기/숨기기 버튼 */
 .auth__password {
   position: relative;
 }
 
 .auth__password .auth__input {
-  padding-right: 76px; /* 오른쪽 토글 버튼 자리 */
+  padding-right: 76px;
 }
 
 .auth__toggle {
@@ -200,7 +496,7 @@
   transform: translateY(-50%);
   padding: 6px 10px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   font: inherit;
   font-size: 13px;
@@ -220,45 +516,53 @@
   color: var(--auth-error);
 }
 
-/* ---------- 버튼 (피그마 Button: Primary / Ghost) ---------- */
+/* ---------- 버튼 ---------- */
 .auth__button {
   width: 100%;
-  padding: 14px 20px;
+  padding: 13px 20px;
   border-radius: 12px;
   font: inherit;
   font-size: 15px;
   font-weight: 700;
   line-height: 1.4;
   cursor: pointer;
+  transition:
+    background-color 0.2s,
+    transform 0.15s,
+    box-shadow 0.2s;
+}
+
+.auth__button:active:not(:disabled) {
+  transform: scale(0.985);
 }
 
 .auth__button--primary {
   border: 0;
   background: var(--auth-navy);
   color: #ffffff;
+  box-shadow: 0 8px 20px rgba(14, 58, 92, 0.28);
 }
 
 .auth__button--primary:hover:not(:disabled) {
   background: #0a2c47;
 }
 
-/* 비활성: 피그마에 따로 없어 흐리게 처리 (디자인 확정 시 교체) */
 .auth__button--primary:disabled {
-  opacity: 0.35;
+  background: #b7c3cf;
+  box-shadow: none;
   cursor: not-allowed;
 }
 
 .auth__button--ghost {
-  border: 1px solid var(--auth-border);
-  background: var(--auth-bg-surface);
+  border: 1px solid rgba(14, 58, 92, 0.12);
+  background: rgba(255, 255, 255, 0.6);
   color: var(--auth-text-primary);
 }
 
 .auth__button--ghost:hover {
-  background: var(--auth-bg-canvas);
+  background: rgba(255, 255, 255, 0.9);
 }
 
-/* "또는" 구분선 */
 .auth__divider {
   display: flex;
   align-items: center;
@@ -274,10 +578,9 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--auth-border);
+  background: rgba(14, 58, 92, 0.12);
 }
 
-/* "계정이 없나요? 회원가입" */
 .auth__switch {
   margin: 0;
   text-align: center;
@@ -297,23 +600,44 @@
   text-decoration: underline;
 }
 
-/* 로그인 없이 체험하기 박스 */
 .auth__trial {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
-  padding: 16px;
-  border: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(30, 99, 181, 0.12);
   border-radius: 16px;
-  background: var(--auth-sky-light);
+  background: rgba(234, 242, 250, 0.72);
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* 오른쪽 화살표 (→) */
+.auth__trial::after {
+  content: "→";
+  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--auth-navy);
+  transition: transform 0.2s;
 }
 
 .auth__trial:hover {
   background: #dde9f6;
+}
+
+.auth__trial:hover::after {
+  transform: translateX(3px);
+}
+
+.auth__trial-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .auth__trial-title {
@@ -329,48 +653,100 @@
   color: var(--auth-text-secondary);
 }
 
-/* 키보드로 이동할 때 보이는 테두리 */
 .auth__button:focus-visible,
 .auth__toggle:focus-visible,
 .auth__trial:focus-visible,
-.auth__switch-link:focus-visible {
+.auth__switch-link:focus-visible,
+.auth__skip:focus-visible {
   outline: 2px solid var(--auth-blue);
   outline-offset: 2px;
 }
 
-/* =========================================================
-   반응형 (기능명세서 COM-09: Tablet 768~1199 / Mobile < 768)
-   ========================================================= */
-
-/* 모바일 전용 줄바꿈(<br>)은 PC·태블릿에서 숨김 */
-.auth__br-mobile {
-  display: none;
+.auth__skip {
+  display: none; /* 모바일 인트로에서만 보임 */
 }
 
-/* 작은 PC(1200~1439): 로그인 카드를 조금 줄여 왼쪽 소개 카드 공간 확보 */
-@media (max-width: 1439px) {
-  .auth__body {
-    gap: 40px;
-    padding-left: 48px;
-    padding-right: 48px;
+/* =========================================================
+   5. 공통 움직임
+   ========================================================= */
+@keyframes auth-fade {
+  from {
+    opacity: 0;
   }
+}
 
-  .auth__intro {
-    padding-left: 44px;
-    padding-right: 44px;
+@keyframes auth-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+@keyframes auth-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes auth-pulse {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes auth-breathe {
+  50% {
+    transform: scale(1.35);
+    opacity: 0.12;
+  }
+}
+
+@keyframes auth-ripple {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes auth-pop {
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* =========================================================
+   6. 반응형
+   ========================================================= */
+
+/* 작은 PC·태블릿 (768~1199) */
+@media (max-width: 1199px) {
+  .auth__stage {
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 40px;
+    padding-left: 40px;
+    padding-right: 40px;
   }
 
   .auth__card {
-    flex-basis: 440px;
-    padding-left: 44px;
-    padding-right: 44px;
+    padding-left: 32px;
+    padding-right: 32px;
   }
 }
 
-/* 높이가 낮은 PC·노트북(세로 760px 이하): 입력칸·버튼을 조금 낮춰 한 화면에 맞춤 */
+/* 높이가 낮은 PC·노트북: 카드 안을 조금 촘촘하게 */
 @media (min-width: 768px) and (max-height: 760px) {
   .auth__title {
-    font-size: 26px;
+    font-size: 24px;
   }
 
   .auth__input {
@@ -384,66 +760,45 @@
   }
 
   .auth__trial {
-    padding: 12px 16px;
-    gap: 4px;
+    padding-top: 11px;
+    padding-bottom: 11px;
   }
 }
 
-/* 태블릿: 2열은 유지하고 여백·글자만 줄임 */
-@media (max-width: 1199px) {
-  .auth__body {
-    gap: 24px;
-    padding: 24px;
+/* 모바일 (767 이하): 스크롤 없이 인트로 → 흰 로그인 화면 */
+@media (max-width: 767px) {
+  .auth {
+    height: 100vh;
+    height: 100dvh; /* 주소창 높이를 뺀 실제 화면 높이 */
   }
 
-  .auth__intro {
-    gap: 48px;
-    padding: 48px 32px 32px;
+  .auth__stage {
+    display: block;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+  }
+
+  /* 인트로: 화면 가운데에 소개 + 그래프 */
+  .auth__hero {
+    height: 100%;
+    justify-content: center;
+    gap: 36px;
+    padding: 24px 24px 72px;
+    transition:
+      opacity 1.2s var(--auth-ease),
+      filter 1.2s var(--auth-ease),
+      transform 1.4s var(--auth-ease);
+  }
+
+  .auth__brand {
+    width: 132px;
   }
 
   .auth__headline {
     font-size: 28px;
   }
 
-  .auth__desc {
-    font-size: 16px;
-  }
-
-  .auth__card {
-    flex-basis: 420px;
-    padding: 48px 40px;
-  }
-}
-
-/* 모바일: 위아래 1열 (소개 → 로그인 카드) */
-@media (max-width: 767px) {
-  .auth__body {
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-  }
-
-  .auth__intro {
-    flex: none;
-    gap: 24px;
-    padding: 32px 24px 24px;
-    border-radius: 20px;
-  }
-
-  .auth__brand {
-    width: 140px;
-  }
-
-  /* 모바일은 세로 스크롤이 자연스러우니 그래프를 화면 폭에 꽉 채움 */
-  .auth__chart {
-    width: 100%;
-  }
-
-  .auth__headline {
-    font-size: 24px;
-  }
-
-  /* "내 손 안에 가장 쉬운 / 자산 시뮬레이터"로 끊기 */
   .auth__br-mobile {
     display: inline;
   }
@@ -452,13 +807,107 @@
     font-size: 15px;
   }
 
+  .auth__chart-wrap {
+    width: 100%;
+  }
+
+  /* 흰 로그인 화면: 처음엔 화면 아래에 숨어 있다가 올라옴 */
+  .auth__panel {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+    padding: 24px 24px calc(24px + env(safe-area-inset-bottom));
+    overflow-y: auto; /* 아주 작은 폰에서만 예외로 스크롤 */
+    background: var(--auth-bg-surface);
+    animation: none;
+    /* 처음엔 투명하고 살짝 흐린 상태 → 서서히 또렷하게 떠오름 */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    filter: blur(10px);
+    transform: scale(1.03);
+    transition:
+      opacity 1.4s var(--auth-ease),
+      filter 1.4s var(--auth-ease),
+      transform 1.6s var(--auth-ease),
+      visibility 0s 1.4s;
+  }
+
+  .auth[data-phase="form"] .auth__panel {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    filter: none;
+    transform: none;
+    transition:
+      opacity 1.4s var(--auth-ease),
+      filter 1.4s var(--auth-ease),
+      transform 1.6s var(--auth-ease),
+      visibility 0s;
+  }
+
+  /* 인트로는 흐려지며 물러남 */
+  .auth[data-phase="form"] .auth__hero {
+    opacity: 0;
+    filter: blur(8px);
+    transform: scale(0.97);
+  }
+
+  .auth__panel-logo {
+    display: block;
+    width: 96px;
+    height: auto;
+  }
+
+  /* 흰 화면에서는 카드 테두리·그림자 없이 바로 */
   .auth__card {
-    flex: none;
-    padding: 32px 24px;
-    border-radius: 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    gap: 14px;
+  }
+
+  .auth__form {
+    gap: 14px;
   }
 
   .auth__title {
-    font-size: 24px;
+    font-size: 26px;
+  }
+
+  .auth__skip {
+    display: block;
+    position: absolute;
+    right: 16px;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    z-index: 3;
+    padding: 8px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: #ffffff;
+    cursor: pointer;
+  }
+}
+
+/* 움직임 줄이기 설정을 켠 사용자: 반복 애니메이션 끄기 */
+@media (prefers-reduced-motion: reduce) {
+  .auth *,
+  .auth *::before,
+  .auth *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
