@@ -106,9 +106,20 @@ export function LoginPage() {
         <p>
           계정이 없나요? <Link to="/signup">회원가입</Link>
         </p>
-        <button type="button" onClick={() => navigate("/futures")}>
-          로그인 없이 체험하기
-        </button>
+        {/* [ACC-05] 로그인 없이 체험하기 → W04(새 상황 만들기)로 이동 */}
+        <div className="auth-trial">
+          <button
+            type="button"
+            className="auth-trial__button"
+            onClick={() => navigate("/futures/new")}
+            aria-describedby="auth-trial-note"
+          >
+            로그인 없이 체험하기
+          </button>
+          <p id="auth-trial-note" className="auth-trial__note">
+            계산·비교는 바로 가능하고, 이 브라우저에만 저장돼요.
+          </p>
+        </div>
       </section>
     </div>
   );
