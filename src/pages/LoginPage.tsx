@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginWithEmail, loginWithGoogle } from "../api/auth";
+import { AuthLayout } from "./AuthLayout";
 import "./auth.css";
-// 피그마에서 내려받은 이미지 (src/assets/login/)
-import brandWordmark from "../assets/login/brand-wordmark.svg";
-import loginChart from "../assets/login/login-chart.svg";
 
-// W01 · 로그인 (첫 화면) — 피그마 node 33:391
-// PC(768px 이상): 왼쪽 서비스 소개 + 오른쪽 로그인 카드 2열
-// 모바일(768px 미만): 위아래 1열 (배치는 auth.css에서)
+// W01 · 로그인 (첫 화면)
+// 배경(움직이는 그라데이션 + 실시간 그래프)과 배치는 AuthLayout이 담당하고,
+// 이 파일은 로그인 카드 안의 내용과 동작만 담당해요.
 
 // 실패 문구 (기능명세서 ACC-02·03, 정책표 13장)
 // 보안을 위해 이메일이 틀렸는지 비밀번호가 틀렸는지는 구분해서 알려주지 않음
@@ -56,126 +54,96 @@ export function LoginPage() {
   };
 
   return (
-    <div className="auth">
-      {/* 상단 로고 헤더 없음: 왼쪽 소개 카드에 로고가 있어 중복이라 제거 (2026-11-23 결정) */}
-      <main className="auth__body">
-        {/* [ACC-01] 왼쪽: 서비스 소개 (어두운 그라데이션 카드) */}
-        <section className="auth__intro">
-          <div className="auth__intro-text">
-            <img
-              className="auth__brand"
-              src={brandWordmark}
-              width={203}
-              height={56}
-              alt="What If?"
+    <AuthLayout>
+      <section className="auth__card">
+        <h2 className="auth__title">로그인</h2>
+        <p className="auth__subtitle">저장해 둔 여러 가지 미래를 다시 열어볼 수 있어요.</p>
+
+        <form className="auth__form" onSubmit={handleSubmit}>
+          <label className="auth__field">
+            <span className="auth__label">이메일</span>
+            <input
+              className="auth__input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="dayeon@example.com"
+              autoComplete="email"
+              required
             />
-            <h1 className="auth__headline">
-              내 손 안에 가장 쉬운 <br className="auth__br-mobile" />
-              자산 시뮬레이터
-            </h1>
-            <p className="auth__desc">
-              계좌 연동 없이, 대략 아는 숫자만으로 미래 자산을 시뮬레이션해요.
-            </p>
-          </div>
-          {/* 예시 그래프는 고정 이미지 (ACC-01) */}
-          <img
-            className="auth__chart"
-            src={loginChart}
-            width={660}
-            height={314}
-            alt="예시 그래프: 2026년 11월부터 자산이 늘어 유럽 여행 목표 1,000만원에 다가가요. 성과급 +100만원, 노트북 −150만원이 표시돼 있어요."
-          />
-        </section>
+          </label>
 
-        {/* 오른쪽: 로그인 카드 */}
-        <section className="auth__card">
-          <h2 className="auth__title">로그인</h2>
-          <p className="auth__subtitle">저장해 둔 여러 가지 미래를 다시 열어볼 수 있어요.</p>
-
-          <form className="auth__form" onSubmit={handleSubmit}>
-            <label className="auth__field">
-              <span className="auth__label">이메일</span>
+          <label className="auth__field">
+            <span className="auth__label">비밀번호</span>
+            <div className="auth__password">
               <input
                 className="auth__input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="dayeon@example.com"
-                autoComplete="email"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 required
               />
-            </label>
+              <button
+                type="button"
+                className="auth__toggle"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                aria-pressed={showPassword}
+              >
+                {showPassword ? "숨기기" : "보기"}
+              </button>
+            </div>
+          </label>
 
-            <label className="auth__field">
-              <span className="auth__label">비밀번호</span>
-              <div className="auth__password">
-                <input
-                  className="auth__input"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  required
-                />
-                <button
-                  type="button"
-                  className="auth__toggle"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
-                  aria-pressed={showPassword}
-                >
-                  {showPassword ? "숨기기" : "보기"}
-                </button>
-              </div>
-            </label>
-
-            {error && (
-              <p className="auth__error" role="alert">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              className="auth__button auth__button--primary"
-              disabled={!canSubmit}
-            >
-              로그인
-            </button>
-          </form>
-
-          <div className="auth__divider">
-            <span>또는</span>
-          </div>
+          {error && (
+            <p className="auth__error" role="alert">
+              {error}
+            </p>
+          )}
 
           <button
-            type="button"
-            className="auth__button auth__button--ghost"
-            onClick={handleGoogleLogin}
+            type="submit"
+            className="auth__button auth__button--primary"
+            disabled={!canSubmit}
           >
-            Google로 계속하기
+            로그인
           </button>
+        </form>
 
-          <p className="auth__switch">
-            계정이 없나요?{" "}
-            <Link to="/signup" className="auth__switch-link">
-              회원가입
-            </Link>
-          </p>
+        <div className="auth__divider">
+          <span>또는</span>
+        </div>
 
-          {/* [ACC-05] 로그인 없이 체험하기: 박스 전체가 버튼 → W04(새 상황 만들기) */}
-          <button
-            type="button"
-            className="auth__trial"
-            onClick={() => navigate("/futures/new")}
-          >
+        <button
+          type="button"
+          className="auth__button auth__button--ghost"
+          onClick={handleGoogleLogin}
+        >
+          Google로 계속하기
+        </button>
+
+        <p className="auth__switch">
+          계정이 없나요?{" "}
+          <Link to="/signup" className="auth__switch-link">
+            회원가입
+          </Link>
+        </p>
+
+        {/* [ACC-05] 로그인 없이 체험하기: 박스 전체가 버튼 → W04(새 상황 만들기) */}
+        <button
+          type="button"
+          className="auth__trial"
+          onClick={() => navigate("/futures/new")}
+        >
+          <span className="auth__trial-text">
             <span className="auth__trial-title">로그인 없이 체험하기</span>
             <span className="auth__trial-note">
               계산·비교는 바로 가능하고, 이 브라우저에만 저장돼요.
             </span>
-          </button>
-        </section>
-      </main>
-    </div>
+          </span>
+        </button>
+      </section>
+    </AuthLayout>
   );
 }
