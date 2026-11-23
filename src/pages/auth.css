@@ -737,6 +737,13 @@
   transition: transform 0.2s;
 }
 
+/* 로그인 요청 중에는 Google·체험하기 버튼도 잠김 */
+.auth__button--ghost:disabled,
+.auth__trial:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .auth__trial:hover {
   background: #dde9f6;
 }

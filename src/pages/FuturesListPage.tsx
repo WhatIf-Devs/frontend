@@ -5,9 +5,11 @@ import { ScenarioCard } from "../components/futures/ScenarioCard";
 import { ConfirmModal } from "../components/common/ConfirmModal";
 import { deleteFuture, fetchFutures } from "../api/futures";
 import type { Future } from "../types/future";
+import { useAuth } from "../state/auth";
 
 // W03 · 내가 저장한 미래 (상황 목록)
 export function FuturesListPage() {
+  const { user } = useAuth();
   const [futures, setFutures] = useState<Future[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<Future | null>(null); // 삭제 확인 중인 상황
@@ -38,7 +40,8 @@ export function FuturesListPage() {
       <main className="futures-list">
         <div className="futures-list__header">
           <div>
-            <h1>다연님이 저장한 미래</h1>
+            {/* 로그인 상태면 "{닉네임}님이", 체험 중이면 "내가" (LST-02) */}
+            <h1>{user ? `${user.nickname}님이` : "내가"} 저장한 미래</h1>
             <p>상황을 열어 이어서 비교하거나, 새 상황을 처음부터 만들 수 있어요.</p>
           </div>
           <Link to="/futures/new" className="button button--primary">

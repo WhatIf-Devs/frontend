@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import { loginWithEmail, loginWithGoogle } from "../api/auth";
+import { toSessionUser, useAuth } from "../state/auth";
 import { AuthLayout } from "./AuthLayout";
 import "./auth.css";
 
@@ -15,11 +16,15 @@ const GOOGLE_LOGIN_ERROR = "로그인하지 못했어요. 다시 시도해 주�
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { user, signIn, signOut } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   // [ACC-02] 비밀번호 보기/숨기기: true면 글자 그대로, false면 ●●●로 가림
   const [showPassword, setShowPassword] = useState(false);
+  // 로그인 요청이 진행 중인지. 진행 중에는 모든 버튼을 잠가서
+  // 두 번 누르기나, 로그인 도중 "체험하기"로 빠지는 일을 막아요 (CodeRabbit 리뷰 반영)
+  const [pending, setPending] = useState(false);
 
   // [ACC-02] 로그인 버튼 활성 조건
   // 이메일 형식: "아이디@도메인.끝자리" 모양인지 검사
@@ -28,30 +33,53 @@ export function LoginPage() {
   // 비밀번호: 한 글자라도 입력됐는지
   const isPasswordFilled = password.length > 0;
   // 둘 다 만족할 때만 로그인 버튼을 누를 수 있음
-  const canSubmit = isEmailValid && isPasswordFilled;
+  const canSubmit = isEmailValid && isPasswordFilled && !pending;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return; // 조건이 안 맞으면 Enter를 눌러도 아무 일도 안 일어남
     setError(null);
+    setPending(true);
     try {
-      await loginWithEmail({ email, password });
+      const account = await loginWithEmail({ email, password });
+      signIn(toSessionUser(account)); // 로그인 상태로 기억 → 헤더에 닉네임 칩
       navigate("/futures");
     } catch {
       setError(EMAIL_LOGIN_ERROR); // 입력값은 그대로 남겨 둠
+    } finally {
+      setPending(false); // 성공이든 실패든 끝나면 잠금 해제
     }
   };
 
+  // [ACC-05] 로그인 없이 체험하기 → W04
+  // 이미 로그인된 상태로 이 화면에 왔다면 먼저 로그아웃해서, 체험 중 저장이 계정이 아닌
+  // 이 브라우저에만 되도록 함 (CodeRabbit 리뷰 반영)
+  const handleTrial = async () => {
+    if (pending) return;
+    if (user) await signOut();
+    navigate("/futures/new");
+  };
+
   const handleGoogleLogin = async () => {
+    if (pending) return;
     setError(null);
+    setPending(true);
     try {
-      await loginWithGoogle();
+      const account = await loginWithGoogle();
+      signIn(toSessionUser(account));
       navigate("/futures");
     } catch {
       // TODO: 토스트 컴포넌트가 생기면 토스트로 바꾸기 (ACC-03)
       setError(GOOGLE_LOGIN_ERROR);
+    } finally {
+      setPending(false);
     }
   };
+
+  // 이미 로그인한 사람은 로그인 화면을 보지 않고 바로 W03(내 미래)으로
+  // (로그인 화면은 로그아웃했을 때, 또는 체험 중 "로그인"을 눌렀을 때만 나와요)
+  // 주의: useState 같은 훅(use…)을 모두 부른 다음에 return 해야 해서 이 위치에 둬요
+  if (user) return <Navigate to="/futures" replace />;
 
   return (
     <AuthLayout>
@@ -107,7 +135,7 @@ export function LoginPage() {
             className="auth__button auth__button--primary"
             disabled={!canSubmit}
           >
-            로그인
+            {pending ? "로그인하는 중…" : "로그인"}
           </button>
         </form>
 
@@ -119,6 +147,7 @@ export function LoginPage() {
           type="button"
           className="auth__button auth__button--ghost"
           onClick={handleGoogleLogin}
+          disabled={pending}
         >
           Google로 계속하기
         </button>
@@ -134,7 +163,8 @@ export function LoginPage() {
         <button
           type="button"
           className="auth__trial"
-          onClick={() => navigate("/futures/new")}
+          onClick={handleTrial}
+          disabled={pending}
         >
           <span className="auth__trial-text">
             <span className="auth__trial-title">로그인 없이 체험하기</span>

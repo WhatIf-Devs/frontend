@@ -32,6 +32,47 @@
   color: #13294b;
 }
 
+/* 오른쪽: 닉네임 칩 + 로그아웃 (피그마 W03 Top nav) */
+.app-header__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-header__nickname {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #cfe2f3; /* brand/sky */
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #0e3a5c; /* brand/navy */
+  white-space: nowrap;
+}
+
+.app-header__logout {
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #52667a; /* text/secondary */
+  cursor: pointer;
+}
+
+.app-header__logout:hover {
+  color: #0f2236;
+  text-decoration: underline;
+}
+
+.app-header__login {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e63b5; /* brand/blue */
+  text-decoration: none;
+}
+
 /* 로그인 / 회원가입 */
 .auth-page {
   display: grid;
