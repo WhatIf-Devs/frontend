@@ -27,8 +27,9 @@ export function Header() {
       <div className="app-header__left">
         {/* 로고 → "/" : 로그인 상태면 W03, 아니면 W01 (App.tsx) */}
         <Link to="/" className="app-header__logo" aria-label="What If? 처음으로">
-          <img src={logoBadge} width={45} height={42} alt="" />
-          <img src={logoWordmark} width={105} height={27} alt="What If?" />
+          <img className="app-header__badge" src={logoBadge} width={45} height={42} alt="" />
+          {/* 모바일(768px 미만)에서는 자리가 좁아 글자 로고를 숨기고 아이콘만 보여요 (App.css) */}
+          <img className="app-header__wordmark" src={logoWordmark} width={105} height={27} alt="What If?" />
         </Link>
         <nav className="app-header__nav">
           {/* NavLink: 지금 주소와 같으면 is-active 클래스가 붙어 굵게 보임.
