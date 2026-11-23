@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { loginWithEmail, loginWithGoogle } from "../api/auth";
 import { toSessionUser, useAuth } from "../state/auth";
@@ -25,6 +25,18 @@ export function LoginPage() {
   // 로그인 요청이 진행 중인지. 진행 중에는 모든 버튼을 잠가서
   // 두 번 누르기나, 로그인 도중 "체험하기"로 빠지는 일을 막아요 (CodeRabbit 리뷰 반영)
   const [pending, setPending] = useState(false);
+  // 지금 이 화면에 있는지. 로그인 응답을 기다리는 사이 회원가입 등 다른 화면으로 떠났다면
+  // 늦게 도착한 응답은 무시해요 (CodeRabbit 리뷰 반영)
+  // useRef: 값이 바뀌어도 화면을 다시 그리지 않는 "메모 칸"
+  const onPageRef = useRef(true);
+  // useLayoutEffect: 화면이 바뀌는 그 순간 바로 실행돼요
+  // (useEffect는 화면이 바뀐 뒤 조금 늦게 실행돼서, 그 틈에 응답이 오면 못 막을 수 있음)
+  useLayoutEffect(() => {
+    onPageRef.current = true; // 화면에 나타남
+    return () => {
+      onPageRef.current = false; // 화면에서 사라짐 (다른 페이지로 이동)
+    };
+  }, []);
 
   // [ACC-02] 로그인 버튼 활성 조건
   // 이메일 형식: "아이디@도메인.끝자리" 모양인지 검사
@@ -42,9 +54,11 @@ export function LoginPage() {
     setPending(true);
     try {
       const account = await loginWithEmail({ email, password });
+      if (!onPageRef.current) return; // 이미 화면을 떠났으면 무시
       signIn(toSessionUser(account)); // 로그인 상태로 기억 → 헤더에 닉네임 칩
       navigate("/futures");
     } catch {
+      if (!onPageRef.current) return;
       setError(EMAIL_LOGIN_ERROR); // 입력값은 그대로 남겨 둠
     } finally {
       setPending(false); // 성공이든 실패든 끝나면 잠금 해제
@@ -66,9 +80,11 @@ export function LoginPage() {
     setPending(true);
     try {
       const account = await loginWithGoogle();
+      if (!onPageRef.current) return; // 이미 화면을 떠났으면 무시
       signIn(toSessionUser(account));
       navigate("/futures");
     } catch {
+      if (!onPageRef.current) return;
       // TODO: 토스트 컴포넌트가 생기면 토스트로 바꾸기 (ACC-03)
       setError(GOOGLE_LOGIN_ERROR);
     } finally {
