@@ -82,7 +82,8 @@ export function SignupPage() {
 
   const update = (field: Field) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues((prev) => ({ ...prev, [field]: e.target.value }));
-    if (field === "email") setEmailTaken(false); // 이메일을 고치면 "이미 가입" 안내는 지움
+    setSubmitError(null); // 입력을 고치면 이전 가입 실패 문구는 지움 (CodeRabbit 리뷰 반영)
+    if (field === "email") setEmailTaken(false); // 이메일을 고치면 "이미 가입" 안내도 지움
   };
   const markTouched = (field: Field) => () => setTouched((prev) => ({ ...prev, [field]: true }));
 
@@ -121,6 +122,7 @@ export function SignupPage() {
       value: values[field],
       onChange: update(field),
       onBlur: markTouched(field),
+      required: true, // 필수 입력임을 화면 읽기 프로그램에도 알림 (form의 noValidate 때문에 브라우저 기본 경고는 안 뜸)
       "aria-invalid": error ? true : undefined,
       "aria-describedby": error ? `signup-${field}-error` : undefined,
     };
@@ -233,7 +235,11 @@ export function SignupPage() {
                 type="checkbox"
                 className="auth__check-input"
                 checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
+                onChange={(e) => {
+                  setAgreed(e.target.checked);
+                  setSubmitError(null);
+                }}
+                required
               />
               <span className="auth__check-box" aria-hidden="true" />
               <span className="auth__check-label">

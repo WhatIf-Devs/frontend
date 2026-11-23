@@ -72,8 +72,11 @@ function makeGeometry({ w, h, pad }: Size) {
 // ---------- 인트로를 건너뛸지 (처음 한 번만 계산) ----------
 // - 움직임 줄이기 설정을 켠 사용자
 // - 모바일에서 이번 탭에 이미 인트로를 본 경우 (PC는 들어올 때마다 애니메이션)
+// 개발·시연용: 주소 끝에 ?intro 를 붙이면 이미 봤어도 인트로를 다시 보여 줌 (예: /login?intro)
 function shouldSkipIntro() {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const forceIntro = new URLSearchParams(window.location.search).has("intro");
+  if (forceIntro) return reduceMotion;
   const isMobile = window.matchMedia(MOBILE_QUERY).matches;
   let seen = false;
   try {
