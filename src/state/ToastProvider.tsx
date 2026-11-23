@@ -30,7 +30,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={showToast}>
       {children}
-      {/* key가 바뀌면 React가 새 요소로 보고 등장 애니메이션을 다시 재생해요 */}
+
+      {/* 스크린리더(화면 낭독기)용 알림 영역: 처음부터 항상 있고 "내용만" 바꿔요.
+          영역이 메시지와 동시에 생기면 낭독기가 놓칠 수 있어서예요 (W3C 상태 메시지 기법).
+          눈에는 안 보이고, 완료는 하던 말을 끝낸 뒤(status) / 실패는 바로(alert) 읽어요 */}
+      <div className="toast-live" role="status" aria-live="polite" aria-atomic="true">
+        {toast?.tone === "success" ? toast.message : ""}
+      </div>
+      <div className="toast-live" role="alert" aria-live="assertive" aria-atomic="true">
+        {toast?.tone === "error" ? toast.message : ""}
+      </div>
+
+      {/* 눈에 보이는 토스트. key가 바뀌면 React가 새 요소로 보고 등장 애니메이션을 다시 재생해요 */}
       {toast && <Toast key={toast.id} message={toast.message} tone={toast.tone} />}
     </ToastContext.Provider>
   );

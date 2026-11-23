@@ -6,17 +6,13 @@ interface ToastProps {
   tone: ToastTone;
 }
 
-// 토스트 한 개의 모양 (띄우고 지우는 건 ToastProvider가 해요)
+// 토스트 한 개의 "보이는" 모양 (띄우고 지우는 건 ToastProvider가 해요)
+// 스크린리더가 읽어 주는 건 ToastProvider의 알림 영역이 따로 맡아서,
+// 여기는 aria-hidden으로 두 번 읽히지 않게 해요
 export default function Toast({ message, tone }: ToastProps) {
   return (
-    <div
-      className={`toast toast--${tone}`}
-      // 스크린리더가 읽어 줘요. 실패는 바로(alert), 완료는 하던 말을 끝낸 뒤(status)
-      role={tone === "error" ? "alert" : "status"}
-    >
-      <span className="toast__icon" aria-hidden="true">
-        {tone === "error" ? "!" : "✓"}
-      </span>
+    <div className={`toast toast--${tone}`} aria-hidden="true">
+      <span className="toast__icon">{tone === "error" ? "!" : "✓"}</span>
       <span className="toast__message">{message}</span>
     </div>
   );
