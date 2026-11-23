@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { loginWithEmail, loginWithGoogle } from "../api/auth";
 import { toSessionUser, useAuth } from "../state/auth";
+import { useToast } from "../state/toast";
 import { AuthLayout } from "./AuthLayout";
 import "./auth.css";
 
@@ -17,6 +18,7 @@ const GOOGLE_LOGIN_ERROR = "로그인하지 못했어요. 다시 시도해 주�
 export function LoginPage() {
   const navigate = useNavigate();
   const { user, signIn, signOut } = useAuth();
+  const showToast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -85,8 +87,8 @@ export function LoginPage() {
       navigate("/futures");
     } catch {
       if (!onPageRef.current) return;
-      // TODO: 토스트 컴포넌트가 생기면 토스트로 바꾸기 (ACC-03)
-      setError(GOOGLE_LOGIN_ERROR);
+      // Google 실패는 입력칸 문제가 아니라서 카드 안 문구 대신 토스트로 (ACC-03)
+      showToast(GOOGLE_LOGIN_ERROR, "error");
     } finally {
       setPending(false);
     }

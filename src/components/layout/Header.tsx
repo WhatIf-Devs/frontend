@@ -1,5 +1,6 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../state/auth";
+import { useToast } from "../../state/toast";
 import logoBadge from "../../assets/login/logo-badge.png";
 import logoWordmark from "../../assets/login/logo-wordmark.svg";
 
@@ -11,6 +12,7 @@ export function Header() {
   const { user, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const showToast = useToast();
   const onFuturesList = location.pathname === "/futures"; // W03
 
   const handleLogout = async () => {
@@ -18,7 +20,7 @@ export function Header() {
       await signOut();
       navigate("/login"); // 로그아웃 → W01 (정책표 13장)
     } catch {
-      // TODO(feature/toast-modal): 토스트 "로그아웃하지 못했어요. 다시 시도해 주세요." (LST-01)
+      showToast("로그아웃하지 못했어요. 다시 시도해 주세요.", "error"); // LST-01
     }
   };
 
