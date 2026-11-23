@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { signupWithEmail } from "../api/auth";
 import { AuthLayout } from "./AuthLayout";
+import { toSessionUser, useAuth } from "../state/auth";
 import "./auth.css";
 
 // W02 · 회원가입 (기능명세서 ACC-06~10, 정책표 2장·13장)
@@ -51,6 +52,7 @@ const FIELDS: Field[] = ["nickname", "email", "password", "passwordConfirm"];
 
 export function SignupPage() {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [values, setValues] = useState<Record<Field, string>>({
     nickname: "",
     email: "",
@@ -97,8 +99,9 @@ export function SignupPage() {
     setSubmitting(true);
     try {
       // TODO(feature/auth-api): 닉네임도 함께 저장하기 (Firebase 연결 시 api/auth.ts에서 처리)
-      await signupWithEmail({ email: values.email.trim(), password: values.password });
-      navigate("/futures"); // 가입 완료 → 자동 로그인 → W03
+      const account = await signupWithEmail({ email: values.email.trim(), password: values.password });
+      signIn(toSessionUser(account, values.nickname)); // 가입 완료 → 자동 로그인 (입력한 닉네임으로)
+      navigate("/futures"); // → W03
     } catch (err) {
       // Firebase는 이미 가입된 이메일이면 code "auth/email-already-in-use"를 돌려줌
       const code = (err as { code?: string } | null)?.code;

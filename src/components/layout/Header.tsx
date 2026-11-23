@@ -1,11 +1,25 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../state/auth";
 
-interface HeaderProps {
-  nickname?: string; // 로그인 상태면 "다연" 같은 닉네임 표시, 비로그인이면 "로그인" 링크
-}
+// 와이어프레임 전 화면 상단에 반복되는 네비게이션 바 (기능명세서 COM-01)
+// 왼쪽: 로고 / 내 미래 / 새 상황 만들기
+// 오른쪽: 로그인 상태면 닉네임 칩, W03(내 미래)에서는 그 옆에 "로그아웃"
+//         비로그인(체험 중 포함)이면 닉네임·로그아웃 없이 "로그인" 링크
+export function Header() {
+  const { user, signOut } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const onFuturesList = location.pathname === "/futures"; // W03
 
-// 와이어프레임 전 화면 상단에 반복되는 네비게이션 바 (로고 / 내 미래 / 새 상황 만들기 / 닉네임·로그인)
-export function Header({ nickname }: HeaderProps) {
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/login"); // 로그아웃 → W01 (정책표 13장)
+    } catch {
+      // TODO(feature/toast-modal): 토스트 "로그아웃하지 못했어요. 다시 시도해 주세요." (LST-01)
+    }
+  };
+
   return (
     <header className="app-header">
       <div className="app-header__left">
@@ -18,7 +32,21 @@ export function Header({ nickname }: HeaderProps) {
         </nav>
       </div>
       <div className="app-header__right">
-        {nickname ? <span>{nickname}</span> : <Link to="/login">로그인</Link>}
+        {user ? (
+          <>
+            {/* 닉네임 칩 (나중에 누르면 계정 메뉴: ACC-12, 시간이 남으면) */}
+            <span className="app-header__nickname">{user.nickname}</span>
+            {onFuturesList && (
+              <button type="button" className="app-header__logout" onClick={handleLogout}>
+                로그아웃
+              </button>
+            )}
+          </>
+        ) : (
+          <Link to="/login" className="app-header__login">
+            로그인
+          </Link>
+        )}
       </div>
     </header>
   );

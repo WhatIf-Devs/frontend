@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginWithEmail, loginWithGoogle } from "../api/auth";
+import { toSessionUser, useAuth } from "../state/auth";
 import { AuthLayout } from "./AuthLayout";
 import "./auth.css";
 
@@ -15,6 +16,7 @@ const GOOGLE_LOGIN_ERROR = "로그인하지 못했어요. 다시 시도해 주�
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,8 @@ export function LoginPage() {
     if (!canSubmit) return; // 조건이 안 맞으면 Enter를 눌러도 아무 일도 안 일어남
     setError(null);
     try {
-      await loginWithEmail({ email, password });
+      const account = await loginWithEmail({ email, password });
+      signIn(toSessionUser(account)); // 로그인 상태로 기억 → 헤더에 닉네임 칩
       navigate("/futures");
     } catch {
       setError(EMAIL_LOGIN_ERROR); // 입력값은 그대로 남겨 둠
@@ -45,7 +48,8 @@ export function LoginPage() {
   const handleGoogleLogin = async () => {
     setError(null);
     try {
-      await loginWithGoogle();
+      const account = await loginWithGoogle();
+      signIn(toSessionUser(account));
       navigate("/futures");
     } catch {
       // TODO: 토스트 컴포넌트가 생기면 토스트로 바꾸기 (ACC-03)
