@@ -4,7 +4,7 @@ import { Header } from "../components/layout/Header";
 import { ScenarioCard } from "../components/futures/ScenarioCard";
 import { ConfirmModal } from "../components/common/ConfirmModal";
 import { deleteFuture, fetchFutures } from "../api/futures";
-import { readLocalFutures } from "../hooks/useLocalFutures";
+import { readLocalFutures, removeLocalFuture } from "../hooks/useLocalFutures";
 import type { Future } from "../types/future";
 import { useAuth } from "../state/auth";
 
@@ -71,7 +71,9 @@ export function FuturesListPage() {
     const target = deleting;
     setDeleting(null);
     try {
-      await deleteFuture(target.id);
+      // 불러온 곳에서 지워요: 로그인이면 계정(서버), 게스트면 이 브라우저 저장소
+      if (user) await deleteFuture(target.id);
+      else removeLocalFuture(target.id);
       setFutures((prev) => prev.filter((f) => f.id !== target.id));
       setMessage(`‘${target.name}’을 삭제했어요.`);
     } catch {

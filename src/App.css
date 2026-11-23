@@ -610,7 +610,7 @@
 .scenario-card__delete {
   background: none;
   border: none;
-  color: #8a97a8;
+  color: #52667a; /* 흰 배경 대비 5.9:1 (WCAG AA 4.5:1 이상) */
   font-size: 12px;
   cursor: pointer;
   padding: 4px;
