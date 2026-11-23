@@ -46,7 +46,10 @@ export function Header() {
         {user ? (
           <>
             {/* 닉네임 칩 (나중에 누르면 계정 메뉴: ACC-12, 시간이 남으면) */}
-            <span className="app-header__nickname">{user.nickname}</span>
+            {/* title: 모바일에서 닉네임이 "…"로 잘려도 길게 누르거나 마우스를 올리면 전체가 보여요 */}
+            <span className="app-header__nickname" title={user.nickname}>
+              {user.nickname}
+            </span>
             {onFuturesList && (
               <button type="button" className="app-header__logout" onClick={handleLogout}>
                 로그아웃
