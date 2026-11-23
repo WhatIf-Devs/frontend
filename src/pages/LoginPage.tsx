@@ -16,7 +16,7 @@ const GOOGLE_LOGIN_ERROR = "로그인하지 못했어요. 다시 시도해 주�
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { user, signIn, signOut } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +43,14 @@ export function LoginPage() {
     } catch {
       setError(EMAIL_LOGIN_ERROR); // 입력값은 그대로 남겨 둠
     }
+  };
+
+  // [ACC-05] 로그인 없이 체험하기 → W04
+  // 이미 로그인된 상태로 이 화면에 왔다면 먼저 로그아웃해서, 체험 중 저장이 계정이 아닌
+  // 이 브라우저에만 되도록 함 (CodeRabbit 리뷰 반영)
+  const handleTrial = async () => {
+    if (user) await signOut();
+    navigate("/futures/new");
   };
 
   const handleGoogleLogin = async () => {
@@ -138,7 +146,7 @@ export function LoginPage() {
         <button
           type="button"
           className="auth__trial"
-          onClick={() => navigate("/futures/new")}
+          onClick={handleTrial}
         >
           <span className="auth__trial-text">
             <span className="auth__trial-title">로그인 없이 체험하기</span>
