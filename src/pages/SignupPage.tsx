@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { signupWithEmail } from "../api/auth";
 import { AuthLayout } from "./AuthLayout";
@@ -72,6 +72,16 @@ export function SignupPage() {
   const [emailTaken, setEmailTaken] = useState(false); // 이미 가입된 이메일 (서버 응답)
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // 지금 이 화면에 있는지. 가입 응답을 기다리는 사이 로그인 등 다른 화면으로 떠났다면
+  // 늦게 도착한 응답은 무시해요 (CodeRabbit 리뷰 반영)
+  // useRef: 값이 바뀌어도 화면을 다시 그리지 않는 "메모 칸"
+  const onPageRef = useRef(true);
+  useEffect(() => {
+    onPageRef.current = true; // 화면에 나타남
+    return () => {
+      onPageRef.current = false; // 화면에서 사라짐 (다른 페이지로 이동)
+    };
+  }, []);
 
   // 칸마다 지금 오류가 있는지 계산 (화면에 보여 줄지는 touched로 결정)
   const errors = Object.fromEntries(FIELDS.map((f) => [f, validate(f, values)])) as Record<
@@ -100,9 +110,11 @@ export function SignupPage() {
     try {
       // TODO(feature/auth-api): 닉네임도 함께 저장하기 (Firebase 연결 시 api/auth.ts에서 처리)
       const account = await signupWithEmail({ email: values.email.trim(), password: values.password });
+      if (!onPageRef.current) return; // 이미 화면을 떠났으면 무시
       signIn(toSessionUser(account, values.nickname)); // 가입 완료 → 자동 로그인 (입력한 닉네임으로)
       navigate("/futures"); // → W03
     } catch (err) {
+      if (!onPageRef.current) return;
       // Firebase는 이미 가입된 이메일이면 code "auth/email-already-in-use"를 돌려줌
       const code = (err as { code?: string } | null)?.code;
       if (code === "auth/email-already-in-use") {
