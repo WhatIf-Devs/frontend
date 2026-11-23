@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import { loginWithEmail, loginWithGoogle } from "../api/auth";
 import { toSessionUser, useAuth } from "../state/auth";
 import { AuthLayout } from "./AuthLayout";
@@ -64,6 +64,11 @@ export function LoginPage() {
       setError(GOOGLE_LOGIN_ERROR);
     }
   };
+
+  // 이미 로그인한 사람은 로그인 화면을 보지 않고 바로 W03(내 미래)으로
+  // (로그인 화면은 로그아웃했을 때, 또는 체험 중 "로그인"을 눌렀을 때만 나와요)
+  // 주의: useState 같은 훅(use…)을 모두 부른 다음에 return 해야 해서 이 위치에 둬요
+  if (user) return <Navigate to="/futures" replace />;
 
   return (
     <AuthLayout>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import { signupWithEmail } from "../api/auth";
 import { AuthLayout } from "./AuthLayout";
 import { toSessionUser, useAuth } from "../state/auth";
@@ -52,7 +52,7 @@ const FIELDS: Field[] = ["nickname", "email", "password", "passwordConfirm"];
 
 export function SignupPage() {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { user, signIn } = useAuth();
   const [values, setValues] = useState<Record<Field, string>>({
     nickname: "",
     email: "",
@@ -138,6 +138,9 @@ export function SignupPage() {
       </p>
     ) : null;
   };
+
+  // 이미 로그인한 사람은 회원가입 화면을 보지 않고 바로 W03(내 미래)으로
+  if (user) return <Navigate to="/futures" replace />;
 
   return (
     <AuthLayout>
