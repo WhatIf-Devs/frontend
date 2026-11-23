@@ -5,31 +5,57 @@
   background: #f3f6fa;
 }
 
+/* 상단 헤더 (피그마 W03 Top nav, 기능명세서 COM-01) */
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 32px;
+  gap: 28px;
+  padding: 16px 40px;
   background: #fff;
   border-bottom: 1px solid #dce5ee;
+  text-align: left;
 }
 
 .app-header__left {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 28px;
 }
 
 .app-header__logo {
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
-  color: #13294b;
+}
+
+.app-header__logo img {
+  display: block;
+}
+
+.app-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
 }
 
 .app-header__nav a {
-  margin-right: 16px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #52667a; /* text/secondary */
   text-decoration: none;
-  color: #13294b;
+}
+
+.app-header__nav a:hover {
+  color: #0f2236;
+}
+
+/* 지금 있는 메뉴: 굵게 + 진하게 */
+.app-header__nav a.is-active {
+  font-weight: 700;
+  color: #0f2236; /* text/primary */
 }
 
 /* 오른쪽: 닉네임 칩 + 로그아웃 (피그마 W03 Top nav) */
@@ -116,70 +142,249 @@
 }
 
 /* 목록 (W03) */
+/* ---------- W03 내가 저장한 미래 (피그마 W03 Body) ---------- */
 .futures-list {
-  padding: 32px;
+  max-width: 1198px; /* 피그마 카드 3개 + 간격 */
+  margin: 0 auto;
+  padding: 40px 32px 56px;
+  text-align: left;
 }
 
 .futures-list__header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.futures-list__title {
+  margin: 0 0 4px;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: normal;
+  color: #0f2236;
+}
+
+.futures-list__desc {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #52667a;
+}
+
+.futures-list__new-button {
+  flex-shrink: 0;
+  padding: 14px 20px;
+  border-radius: 12px;
+  background: #0e3a5c; /* brand/navy */
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #fff;
+  text-decoration: none;
+}
+
+.futures-list__new-button:hover {
+  background: #0a2c47;
+}
+
+.futures-list__message,
+.futures-list__status {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #52667a;
+}
+
+.futures-list__retry {
+  margin-top: 8px;
+  padding: 8px 14px;
+  border: 1px solid #dce5ee;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-weight: 700;
+  color: #0e3a5c;
+  cursor: pointer;
 }
 
 .futures-list__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
 }
 
+/* 상황 카드 (피그마 Plan card) */
 .scenario-card {
-  background: #fff;
-  border: 1px solid #dce5ee;
-  border-radius: 12px;
-  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.scenario-card--new {
-  align-items: center;
-  justify-content: center;
-  border-style: dashed;
-  text-decoration: none;
-  color: #13294b;
+  gap: 12px;
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid #dce5ee;
+  border-radius: 16px;
+  background: #fff;
 }
 
 .scenario-card__header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 
+.scenario-card__name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: normal;
+  color: #0f2236;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* 이름이 길면 … 처리 */
+}
+
+/* "목표 o / x" 태그 (피그마 Tag). 결과 화면에서도 같은 클래스를 씀 */
 .scenario-card__badge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #cfe2f3; /* brand/sky */
   font-size: 12px;
-  background: #e8edf5;
-  border-radius: 999px;
-  padding: 2px 8px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #0e3a5c;
 }
 
-.scenario-card__chart-placeholder {
-  height: 60px;
-  background: #eef2f7;
-  border-radius: 8px;
+.scenario-card__summary {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #52667a;
+}
+
+.scenario-card__sparkline {
+  display: block;
+  width: 100%;
+  height: 70px;
+  overflow: visible;
+}
+
+.scenario-card__sparkline-line {
+  fill: none;
+  stroke: #0e3a5c;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke; /* 그래프를 늘려도 선 두께는 그대로 */
+}
+
+.scenario-card__sparkline-goal {
+  stroke: #3b4fa0;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.scenario-card__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .scenario-card__amount {
   font-size: 22px;
   font-weight: 700;
-  color: #13294b;
+  line-height: 1.45;
+  color: #0e3a5c;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 결과 칩 (LST-04): 달성·증가 초록 / 미달·감소 빨강 */
+.scenario-card__chip {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.scenario-card__chip--good {
+  background: #e3f4ee; /* status/good-bg */
+  color: #0f7b5f; /* status/good */
+}
+
+.scenario-card__chip--warn {
+  background: #ffefee; /* status/warn-bg */
+  color: #bb3535; /* status/warn */
 }
 
 .scenario-card__footer {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.scenario-card__updated {
+  flex: 1;
   font-size: 12px;
-  color: #8a97a8;
+  line-height: 1.45;
+  color: #52667a;
+}
+
+.scenario-card__open {
+  padding: 14px 20px;
+  border-radius: 12px;
+  background: #eaf2fa; /* brand/sky-light (피그마 Button Secondary) */
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #0e3a5c;
+  text-decoration: none;
+}
+
+.scenario-card__open:hover {
+  background: #dde9f6;
+}
+
+/* 점선 "새 상황 만들기" 카드 (피그마 New plan card) */
+.scenario-card--new {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 260px;
+  border: 1.5px dashed #8fc0e6; /* brand/mid */
+  background: #eaf2fa;
+  text-decoration: none;
+}
+
+.scenario-card--new:hover {
+  background: #dde9f6;
+}
+
+.scenario-card__new-plus {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  color: #0e3a5c;
+}
+
+.scenario-card__new-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #0e3a5c;
+}
+
+.scenario-card__new-desc {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #52667a;
 }
 
 /* 새 상황 만들기 (B) */
@@ -405,10 +610,10 @@
 .scenario-card__delete {
   background: none;
   border: none;
-  color: #c0392b;
+  color: #8a97a8;
   font-size: 12px;
   cursor: pointer;
-  padding: 0;
+  padding: 4px;
 }
 
 /* 금액 입력칸: 숫자 + '만원' (MoneyInput) */
