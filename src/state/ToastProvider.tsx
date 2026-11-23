@@ -31,14 +31,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={showToast}>
       {children}
 
-      {/* 스크린리더(화면 낭독기)용 알림 영역: 처음부터 항상 있고 "내용만" 바꿔요.
-          영역이 메시지와 동시에 생기면 낭독기가 놓칠 수 있어서예요 (W3C 상태 메시지 기법).
-          눈에는 안 보이고, 완료는 하던 말을 끝낸 뒤(status) / 실패는 바로(alert) 읽어요 */}
+      {/* 스크린리더(화면 낭독기)용 알림 영역 (눈에는 안 보여요)
+          - 처음부터 항상 있고 "안쪽 내용만" 바꿔요. 영역이 메시지와 동시에 생기면 낭독기가 놓칠 수 있어서예요
+          - polite: 낭독기가 하던 말을 끝낸 뒤 읽어요. 우리 실패는 다시 시도하면 되는 일이라
+            말을 끊는 assertive(=alert)까지는 안 써요 (WAI-ARIA 권장)
+          - 안쪽 span의 key를 토스트마다 바꿔서, 같은 문구가 연달아 와도 "새 알림"으로 다시 읽혀요 */}
       <div className="toast-live" role="status" aria-live="polite" aria-atomic="true">
-        {toast?.tone === "success" ? toast.message : ""}
-      </div>
-      <div className="toast-live" role="alert" aria-live="assertive" aria-atomic="true">
-        {toast?.tone === "error" ? toast.message : ""}
+        {toast && <span key={toast.id}>{toast.message}</span>}
       </div>
 
       {/* 눈에 보이는 토스트. key가 바뀌면 React가 새 요소로 보고 등장 애니메이션을 다시 재생해요 */}
