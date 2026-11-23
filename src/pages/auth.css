@@ -21,13 +21,6 @@
   --auth-error: #d1453b;
   --auth-ease: cubic-bezier(0.22, 1, 0.36, 1); /* 부드럽게 멈추는 움직임 */
 
-  /* 공용 index.css의 #root(최대 1126px) 상자를 벗어나 브라우저 전체를 씀.
-     팀에서 #root 설정을 고치면 position~right 4줄은 지워도 됨 */
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-
   min-height: 100vh;
   min-height: 100dvh;
   overflow: hidden;
