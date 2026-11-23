@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { loginWithEmail, loginWithGoogle } from "../api/auth";
 import { toSessionUser, useAuth } from "../state/auth";
@@ -29,7 +29,9 @@ export function LoginPage() {
   // 늦게 도착한 응답은 무시해요 (CodeRabbit 리뷰 반영)
   // useRef: 값이 바뀌어도 화면을 다시 그리지 않는 "메모 칸"
   const onPageRef = useRef(true);
-  useEffect(() => {
+  // useLayoutEffect: 화면이 바뀌는 그 순간 바로 실행돼요
+  // (useEffect는 화면이 바뀐 뒤 조금 늦게 실행돼서, 그 틈에 응답이 오면 못 막을 수 있음)
+  useLayoutEffect(() => {
     onPageRef.current = true; // 화면에 나타남
     return () => {
       onPageRef.current = false; // 화면에서 사라짐 (다른 페이지로 이동)
