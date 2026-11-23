@@ -7,6 +7,7 @@ import { deleteFuture, fetchFutures } from "../api/futures";
 import { readLocalFutures, removeLocalFuture } from "../hooks/useLocalFutures";
 import type { Future } from "../types/future";
 import { useAuth } from "../state/auth";
+import { useToast } from "../state/toast";
 
 // W03 · 내가 저장한 미래 (상황 목록) — 기능명세서 LST-01~06, 피그마 W03
 // - 로그인 상태: 계정에 저장한 상황 / 체험 중(비로그인): 이 브라우저에 저장한 상황만 (LST-01)
@@ -29,12 +30,12 @@ function sortFutures(list: Future[]): Future[] {
 
 export function FuturesListPage() {
   const { user } = useAuth();
+  const showToast = useToast();
   const [futures, setFutures] = useState<Future[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0); // 바꾸면 목록을 다시 불러옴 (재시도)
   const [deleting, setDeleting] = useState<Future | null>(null); // 삭제 확인 중인 상황
-  const [message, setMessage] = useState("");
 
   useEffect(() => {
     let cancelled = false; // 화면을 떠난 뒤 늦게 온 응답은 무시
@@ -75,9 +76,9 @@ export function FuturesListPage() {
       if (user) await deleteFuture(target.id);
       else removeLocalFuture(target.id);
       setFutures((prev) => prev.filter((f) => f.id !== target.id));
-      setMessage(`‘${target.name}’을 삭제했어요.`);
+      showToast(`‘${target.name}’을 삭제했어요.`); // LST-08
     } catch {
-      setMessage("삭제하지 못했어요. 다시 시도해 주세요.");
+      showToast("삭제하지 못했어요. 다시 시도해 주세요.", "error"); // 목록은 그대로 유지
     }
   };
 
@@ -97,12 +98,6 @@ export function FuturesListPage() {
             + 새 상황 만들기
           </Link>
         </div>
-
-        {message && (
-          <p className="futures-list__message" role="status">
-            {message}
-          </p>
-        )}
 
         {loading ? (
           <p className="futures-list__status">불러오는 중...</p>
