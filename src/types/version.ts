@@ -14,6 +14,7 @@ export interface ScenarioVersion {
 
 /** 지금 결과 화면에서 다루는 상황 전체 */
 export interface WorkingScenario {
+  id?: string; // 이 작업(결과 화면 세션) 고유 id. 저장 화면 초안이 다른 상황 것과 섞이지 않게 구분 (state/saveDraft.ts)
   baseScenarioId?: string; // W03에서 '열기'로 연 저장된 상황이면 그 id (덮어쓰기용)
   baseScenarioName?: string;
   versions: ScenarioVersion[];
@@ -37,6 +38,7 @@ export interface EditRequest {
 export interface SaveTarget {
   version: ScenarioVersion; // 저장할 버전 (지금 보고 있는 버전)
   baseVersion: ScenarioVersion; // V1 (요약 카드의 비교선·'V1 대비' 계산용)
+  workingId: string; // 지금 작업(WorkingScenario)의 고유 id (저장 화면 초안 구분용)
   baseScenarioId?: string; // 있으면 '덮어쓰기' 선택지 노출 (SAV-05)
   baseScenarioName?: string;
 }
