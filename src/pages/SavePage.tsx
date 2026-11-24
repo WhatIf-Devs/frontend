@@ -7,6 +7,7 @@ import type { Future } from "../types/future";
 import { useAuth } from "../state/auth";
 import { useToast } from "../state/toast";
 import { SaveSummaryCard } from "../components/save/SaveSummaryCard";
+import { ConfirmModal } from "../components/common/ConfirmModal";
 import {
   clearSaveDraft,
   readSaveDraft,
@@ -23,10 +24,11 @@ import {
 //   - target.baseVersion  : V1 (요약 카드의 'V1 대비' 계산용)
 //   - target.baseScenarioId / baseScenarioName : 저장된 상황을 열었을 때만 있음 → '덮어쓰기' 노출
 //
-// TODO(팀원):
+// TODO:
 //  - SAV-03 상황 이름: AI 제안 이름 (지금은 버전 제목/상황 이름으로 대체)
 //  - (완료) SAV-06 로그인 상태면 '저장' 버튼 1개만, 로그인하고 저장 → W01 → 돌아와서 저장
 //  - (완료) 오른쪽 '저장될 내용' 요약 카드 → components/save/SaveSummaryCard.tsx (명세서 번호는 SAV-05)
+//  - (완료) SAV-04 덮어쓰기 선택 후 저장 시 확인 모달
 //  - 디자인 적용
 export function SavePage() {
   const navigate = useNavigate();
@@ -45,6 +47,8 @@ export function SavePage() {
     draft?.mode === "overwrite" && baseScenarioId ? "overwrite" : "new",
   );
   const [failed, setFailed] = useState(false);
+  // [SAV-04] 덮어쓰기 확인 모달을 띄웠는지
+  const [confirmingOverwrite, setConfirmingOverwrite] = useState(false);
   // [SAV-06] 로그인 상태 연결: user가 있으면 로그인한 상태
   const { user } = useAuth();
   const isLoggedIn = user !== null;
@@ -64,6 +68,12 @@ export function SavePage() {
 
   // TODO(feature/auth-api·BE 연결 후): 로그인 상태면 api/futures.ts의 createFuture / overwriteFuture로 계정에 저장.
   //   지금은 mock이라 로그인 상태도 브라우저 저장소에 저장하고, W03(mock 목록)에서 같이 보여요.
+  // [SAV-04] 저장 버튼을 누르면: 덮어쓰기면 한 번 더 묻고, 새 상황이면 바로 저장
+  const requestSave = () => {
+    if (mode === "overwrite") setConfirmingOverwrite(true);
+    else saveInBrowser();
+  };
+
   // '로그인하고 저장': 입력값을 초안으로 적어 두고 로그인 화면으로 (돌아올 주소 /save 전달)
   const goLoginAndSave = () => {
     const ok = writeSaveDraft({ targetKey: saveTargetKey(target), name, memo, mode });
@@ -147,12 +157,12 @@ export function SavePage() {
               <button type="button" onClick={goLoginAndSave}>
                 로그인하고 저장
               </button>
-              <button type="button" disabled={!name.trim() || !localOk} onClick={saveInBrowser}>
+              <button type="button" disabled={!name.trim() || !localOk} onClick={requestSave}>
                 이 브라우저에만 저장
               </button>
             </div>
           ) : (
-            <button type="button" disabled={!name.trim()} onClick={saveInBrowser}>
+            <button type="button" disabled={!name.trim()} onClick={requestSave}>
               저장
             </button>
           )}
@@ -160,6 +170,21 @@ export function SavePage() {
 
           <SaveSummaryCard version={version} baseVersion={baseVersion} />
         </div>
+
+        {/* [SAV-04] 덮어쓰기 확인 (PRD F6: "기존 플랜이 바뀌어요") */}
+        {confirmingOverwrite && (
+          <ConfirmModal
+            title={`‘${baseScenarioName}’에 덮어쓸까요?`}
+            description={`기존 플랜이 이 버전(V${version.no}) 조건으로 바뀌고, 되돌릴 수 없어요.`}
+            confirmLabel="덮어쓰기"
+            danger
+            onConfirm={() => {
+              setConfirmingOverwrite(false);
+              saveInBrowser();
+            }}
+            onCancel={() => setConfirmingOverwrite(false)}
+          />
+        )}
       </main>
     </div>
   );
