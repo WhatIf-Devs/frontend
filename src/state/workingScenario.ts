@@ -31,6 +31,7 @@ export function startWorking(
 ): WorkingScenario {
   const v1: ScenarioVersion = { no: 1, title: "기존 플랜", condition, result: simulate(condition) };
   const w: WorkingScenario = {
+    id: crypto.randomUUID(), // 새로 시작할 때마다 새 id → 저장 화면 초안이 다른 상황 것과 안 섞임
     baseScenarioId: base?.id,
     baseScenarioName: base?.name,
     versions: [v1],
@@ -97,9 +98,15 @@ export function updateViewingCondition(
 
 /** W10 저장 화면이 읽는 값 */
 export function getSaveTarget(): SaveTarget | null {
-  const w = loadWorking();
+  let w = loadWorking();
   if (!w) return null;
+  if (!w.id) {
+    // id가 생기기 전(이 수정 전)에 시작한 작업이면 지금 하나 붙여 둠
+    w = { ...w, id: crypto.randomUUID() };
+    write(w);
+  }
   return {
+    workingId: w.id!,
     version: getViewingVersion(w),
     baseVersion: w.versions[0],
     baseScenarioId: w.baseScenarioId,

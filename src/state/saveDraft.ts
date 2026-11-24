@@ -18,9 +18,13 @@ export interface SaveDraft {
   mode: SaveMode;
 }
 
-/** 저장 대상을 구분하는 글자: "원래 상황 id(없으면 빈칸) : 버전 번호 : 버전 제목" */
+/**
+ * 저장 대상을 구분하는 글자: "작업 고유 id : 버전 번호"
+ * 새 상황은 원래 상황 id가 없고 V1 제목도 늘 '기존 플랜'이라, 예전 방식(원래 id·번호·제목)으로는
+ * 서로 다른 새 상황끼리 키가 같아져 남의 초안이 채워질 수 있었어요 (CodeRabbit 리뷰 반영, PR #17)
+ */
 export function saveTargetKey(target: SaveTarget): string {
-  return `${target.baseScenarioId ?? ""}:${target.version.no}:${target.version.title}`;
+  return `${target.workingId}:${target.version.no}`;
 }
 
 /** 초안 적어 두기. 저장소를 못 쓰면 false */
