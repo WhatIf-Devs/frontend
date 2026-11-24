@@ -1,7 +1,8 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { useNavigate, Link, Navigate } from "react-router-dom";
+import { useNavigate, useLocation, Link, Navigate } from "react-router-dom";
 import { signupWithEmail } from "../api/auth";
 import { AuthLayout } from "./AuthLayout";
+import { getReturnTo, keepReturnTo } from "../lib/returnTo";
 import { toSessionUser, useAuth } from "../state/auth";
 import "./auth.css";
 
@@ -52,6 +53,8 @@ const FIELDS: Field[] = ["nickname", "email", "password", "passwordConfirm"];
 
 export function SignupPage() {
   const navigate = useNavigate();
+  // [SAV-06] 로그인 화면에서 넘어온 "돌아갈 주소"를 이어받음 (가입 후 그 화면으로)
+  const returnTo = getReturnTo(useLocation().state);
   const { user, signIn } = useAuth();
   const [values, setValues] = useState<Record<Field, string>>({
     nickname: "",
@@ -114,7 +117,7 @@ export function SignupPage() {
       const account = await signupWithEmail({ email: values.email.trim(), password: values.password });
       if (!onPageRef.current) return; // 이미 화면을 떠났으면 무시
       signIn(toSessionUser(account, values.nickname)); // 가입 완료 → 자동 로그인 (입력한 닉네임으로)
-      navigate("/futures"); // → W03
+      navigate(returnTo); // → 돌아갈 주소 (없으면 W03)
     } catch (err) {
       if (!onPageRef.current) return;
       // Firebase는 이미 가입된 이메일이면 code "auth/email-already-in-use"를 돌려줌
@@ -154,7 +157,7 @@ export function SignupPage() {
   };
 
   // 이미 로그인한 사람은 회원가입 화면을 보지 않고 바로 W03(내 미래)으로
-  if (user) return <Navigate to="/futures" replace />;
+  if (user) return <Navigate to={returnTo} replace />;
 
   return (
     <AuthLayout>
@@ -191,7 +194,7 @@ export function SignupPage() {
               // 정책표 13장: 이미 가입된 이메일이면 로그인 안내
               <p id="signup-email-error" className="auth__field-error">
                 이미 가입된 이메일이에요.{" "}
-                <Link to="/login" className="auth__field-error-link">
+                <Link to="/login" state={keepReturnTo(returnTo)} className="auth__field-error-link">
                   로그인하기
                 </Link>
               </p>
@@ -286,7 +289,7 @@ export function SignupPage() {
         {/* [ACC-10] 로그인으로 */}
         <p className="auth__switch">
           이미 계정이 있나요?{" "}
-          <Link to="/login" className="auth__switch-link">
+          <Link to="/login" state={keepReturnTo(returnTo)} className="auth__switch-link">
             로그인
           </Link>
         </p>

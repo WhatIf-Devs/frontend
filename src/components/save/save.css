@@ -1,0 +1,178 @@
+/* W10 상황 저장 화면 (SavePage + SaveSummaryCard)
+   반응형: Desktop 2열(왼쪽 폼, 오른쪽 요약 카드) → 768px 미만 1열 (PRD 반응형 기준) */
+
+.save-page__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 32px;
+  align-items: start;
+  text-align: left;
+}
+
+@media (max-width: 767px) {
+  .save-page__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- 요약 카드 ---------- */
+
+.save-summary {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 24px;
+}
+
+@media (max-width: 767px) {
+  .save-summary {
+    position: static;
+  }
+}
+
+.save-summary__title {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+.save-summary__version {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.save-summary__version-no {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.save-summary__rows {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.save-summary__row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 8px;
+}
+
+.save-summary__row dt {
+  color: var(--text);
+}
+
+.save-summary__row dd {
+  margin: 0;
+  color: var(--text-h);
+  overflow-wrap: anywhere;
+}
+
+.save-summary__events {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.save-summary__more {
+  color: var(--text);
+}
+
+.save-summary__expected {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 20px 0 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.save-summary__expected-label {
+  width: 100%;
+  font-size: 13px;
+}
+
+.save-summary__expected-amount {
+  font-size: 24px;
+  color: var(--text-h);
+}
+
+.save-summary__diff {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.save-summary__diff--up {
+  color: #16a34a;
+}
+
+.save-summary__diff--down {
+  color: #dc2626;
+}
+
+.save-summary__chart {
+  display: block;
+  width: 100%;
+  height: 72px;
+}
+
+.save-summary__chart-line,
+.save-summary__chart-base {
+  fill: none;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+}
+
+.save-summary__chart-line {
+  stroke: var(--accent);
+}
+
+.save-summary__chart-base {
+  stroke: var(--border);
+}
+
+.save-summary__chart-goal {
+  stroke: var(--text);
+  stroke-dasharray: 4 4;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.save-summary__legend {
+  display: flex;
+  gap: 12px;
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.save-summary__legend span::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.save-summary__legend-base::before {
+  background: var(--border);
+}
+
+.save-summary__legend-current::before {
+  background: var(--accent);
+}
