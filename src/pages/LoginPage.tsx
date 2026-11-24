@@ -1,9 +1,10 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { useNavigate, Link, Navigate } from "react-router-dom";
+import { useNavigate, useLocation, Link, Navigate } from "react-router-dom";
 import { loginWithEmail, loginWithGoogle } from "../api/auth";
 import { toSessionUser, useAuth } from "../state/auth";
 import { useToast } from "../state/toast";
 import { AuthLayout } from "./AuthLayout";
+import { getReturnTo, keepReturnTo } from "../lib/returnTo";
 import "./auth.css";
 
 // W01 · 로그인 (첫 화면)
@@ -17,6 +18,8 @@ const GOOGLE_LOGIN_ERROR = "로그인하지 못했어요. 다시 시도해 주�
 
 export function LoginPage() {
   const navigate = useNavigate();
+  // [SAV-06] 저장 화면 등에서 "로그인하고 저장"으로 왔다면, 로그인 후 그 화면으로 돌아감
+  const returnTo = getReturnTo(useLocation().state);
   const { user, signIn, signOut } = useAuth();
   const showToast = useToast();
   const [email, setEmail] = useState("");
@@ -58,7 +61,7 @@ export function LoginPage() {
       const account = await loginWithEmail({ email, password });
       if (!onPageRef.current) return; // 이미 화면을 떠났으면 무시
       signIn(toSessionUser(account)); // 로그인 상태로 기억 → 헤더에 닉네임 칩
-      navigate("/futures");
+      navigate(returnTo);
     } catch {
       if (!onPageRef.current) return;
       setError(EMAIL_LOGIN_ERROR); // 입력값은 그대로 남겨 둠
@@ -84,7 +87,7 @@ export function LoginPage() {
       const account = await loginWithGoogle();
       if (!onPageRef.current) return; // 이미 화면을 떠났으면 무시
       signIn(toSessionUser(account));
-      navigate("/futures");
+      navigate(returnTo);
     } catch {
       if (!onPageRef.current) return;
       // Google 실패는 입력칸 문제가 아니라서 카드 안 문구 대신 토스트로 (ACC-03)
@@ -97,7 +100,7 @@ export function LoginPage() {
   // 이미 로그인한 사람은 로그인 화면을 보지 않고 바로 W03(내 미래)으로
   // (로그인 화면은 로그아웃했을 때, 또는 체험 중 "로그인"을 눌렀을 때만 나와요)
   // 주의: useState 같은 훅(use…)을 모두 부른 다음에 return 해야 해서 이 위치에 둬요
-  if (user) return <Navigate to="/futures" replace />;
+  if (user) return <Navigate to={returnTo} replace />;
 
   return (
     <AuthLayout>
@@ -172,7 +175,7 @@ export function LoginPage() {
 
         <p className="auth__switch">
           계정이 없나요?{" "}
-          <Link to="/signup" className="auth__switch-link">
+          <Link to="/signup" state={keepReturnTo(returnTo)} className="auth__switch-link">
             회원가입
           </Link>
         </p>

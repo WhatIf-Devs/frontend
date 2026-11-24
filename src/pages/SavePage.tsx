@@ -4,6 +4,7 @@ import { Header } from "../components/layout/Header";
 import { clearWorking, getSaveTarget } from "../state/workingScenario";
 import { canUseLocalStorage, saveLocalFuture } from "../hooks/useLocalFutures";
 import type { Future } from "../types/future";
+import { useAuth } from "../state/auth";
 
 // W10 · 상황 저장 (SAV-01~08)
 // 뼈대만 만들어 둔 상태. 디자인·세부 동작은 feature/save-page 브랜치에서 팀원이 완성.
@@ -15,7 +16,7 @@ import type { Future } from "../types/future";
 //
 // TODO(팀원):
 //  - SAV-03 상황 이름: AI 제안 이름 (지금은 버전 제목/상황 이름으로 대체)
-//  - SAV-06 로그인 상태면 '저장' 버튼 1개만, 로그인하고 저장 → W01 → 돌아와서 저장
+//  - (완료) SAV-06 로그인 상태면 '저장' 버튼 1개만, 로그인하고 저장 → W01 → 돌아와서 저장
 //  - SAV-07 오른쪽 '저장될 내용' 요약 카드 (미니 그래프 포함)
 //  - 디자인 적용
 export function SavePage() {
@@ -28,7 +29,9 @@ export function SavePage() {
   const [memo, setMemo] = useState("");
   const [mode, setMode] = useState<"new" | "overwrite">("new");
   const [failed, setFailed] = useState(false);
-  const isLoggedIn = false; // TODO(팀원): 로그인 상태 연결
+  // [SAV-06] 로그인 상태 연결: user가 있으면 로그인한 상태
+  const { user } = useAuth();
+  const isLoggedIn = user !== null;
   const localOk = canUseLocalStorage();
 
   if (!target || !version) {
@@ -43,6 +46,8 @@ export function SavePage() {
     );
   }
 
+  // TODO(feature/auth-api·BE 연결 후): 로그인 상태면 api/futures.ts의 createFuture / overwriteFuture로 계정에 저장.
+  //   지금은 mock이라 로그인 상태도 브라우저 저장소에 저장하고, W03(mock 목록)에서 같이 보여요.
   const saveInBrowser = () => {
     const { condition, result } = version;
     const future: Future = {
@@ -108,7 +113,9 @@ export function SavePage() {
           <div className="modal__warning">
             <strong>저장하려면 로그인이 필요해요</strong>
             <p>로그인하면 지금 입력과 대화 버전(V1~V{version.no})이 그대로 이어져요.</p>
-            <button type="button" onClick={() => navigate("/login")}>
+            {/* 로그인 화면에 "끝나면 /save로 돌아와 줘"를 같이 넘김 (lib/returnTo.ts).
+                지금 입력한 조건·버전은 sessionStorage에 남아 있어서 돌아와도 그대로예요 */}
+            <button type="button" onClick={() => navigate("/login", { state: { from: "/save" } })}>
               로그인하고 저장
             </button>
             <button type="button" disabled={!name.trim() || !localOk} onClick={saveInBrowser}>
