@@ -615,8 +615,56 @@
 .future-result__saving {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   margin: 16px 0;
+}
+
+.future-result__saving input[type="range"] {
+  flex: 1;
+  min-width: 160px;
+}
+
+.future-result__saving small {
+  width: 100%;
+  color: var(--text);
+}
+
+/* 버전 칩 (CHT-05·06) */
+.future-result__versions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.future-result__version {
+  padding: 4px 12px;
+  border: 1px solid #dce5ee;
+  border-radius: 999px;
+  background: #fff;
+  color: #13294b;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.future-result__version--active {
+  background: #13294b;
+  border-color: #13294b;
+  color: #fff;
+}
+
+/* 이전 버전 보는 중 배너 (RES-16) */
+.future-result__version-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #eef3fb;
+  font-size: 14px;
 }
 
 .future-result__actions {

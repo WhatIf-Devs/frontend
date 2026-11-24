@@ -6,11 +6,16 @@ import { AIChatPanel } from "../components/result/AIChatPanel";
 import { ConfirmModal } from "../components/common/ConfirmModal";
 import { fetchFutureById } from "../api/futures";
 import {
+  addVersion,
   getViewingVersion,
   loadWorking,
+  MAX_VERSIONS,
+  setViewing,
   startWorking,
   toCondition,
 } from "../state/workingScenario";
+import { simulate } from "../lib/simulate";
+import { useToast } from "../state/toast";
 import type { EditRequest, WorkingScenario } from "../types/version";
 
 // W07(목표 있음) · W08(목표 없음) 결과 화면 + AI 패널
@@ -24,6 +29,9 @@ export function FutureResultPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [pendingEditStep, setPendingEditStep] = useState<2 | 3 | null>(null); // 버전이 사라진다는 확인 중
+  // [RES-11] 슬라이더를 움직이는 중인 값 (null이면 움직이는 중 아님)
+  const [draftSaving, setDraftSaving] = useState<number | null>(null);
+  const showToast = useToast();
 
   useEffect(() => {
     if (!id) return;
@@ -80,6 +88,34 @@ export function FutureResultPage() {
   const hasGoal = Boolean(goal);
   const finalAsset = series[series.length - 1] ?? condition.currentAsset;
   const diffFromNow = finalAsset - condition.currentAsset;
+  const base = working.versions[0]; // V1 기존 플랜 (비교선, 정책표 10장)
+  const isViewingBase = viewing.no === base.no;
+  const latest = working.versions[working.versions.length - 1];
+
+  // [RES-11] 슬라이더 미리보기: 움직이는 동안 바뀐 월 저축으로 다시 계산해서 점선으로
+  const previewSeries =
+    draftSaving !== null && draftSaving !== condition.monthlySaving
+      ? simulate({ ...condition, monthlySaving: draftSaving }).series
+      : undefined;
+
+  // 손을 떼면: 바뀐 월 저축으로 새 버전(Vn)을 만들고 그 버전을 보여 줌 → V1과 비교선으로 비교
+  // (AI 없이도 "조건 변경 → 시나리오 비교"가 되게. AI 질문으로 만드는 버전과 같은 목록에 쌓여요)
+  const commitSaving = () => {
+    if (draftSaving === null) return;
+    const next = draftSaving;
+    setDraftSaving(null);
+    if (next === condition.monthlySaving) return;
+    const added = addVersion(working, `월 ${next.toLocaleString()}만원`, { ...condition, monthlySaving: next });
+    if (!added) {
+      showToast(`버전은 ${MAX_VERSIONS}개까지 만들 수 있어요. 저장하거나 이전 버전을 활용해 주세요.`, "error");
+      return;
+    }
+    setWorking(added);
+  };
+
+  // [CHT-06] 버전 칩을 누르면 그 버전을 그래프에 표시
+  const viewVersion = (no: number) => setWorking(setViewing(working, no));
+
   const years = condition.periodMonths / 12;
   const periodLabel = Number.isInteger(years) ? `${years}년` : `${condition.periodMonths}개월`;
 
@@ -95,7 +131,7 @@ export function FutureResultPage() {
     navigate("/futures/new", { state: { edit: request } });
   };
 
-  // RES-02: AI 대화로 만든 버전(V2~)이 있으면 사라진다고 한 번 더 확인
+  // RES-02: AI 대화·슬라이더로 만든 버전(V2~)이 있으면 사라진다고 한 번 더 확인
   const requestEdit = (step: 2 | 3) => {
     if (working.versions.length > 1) setPendingEditStep(step);
     else goEdit(step);
@@ -149,13 +185,63 @@ export function FutureResultPage() {
             )}
           </div>
 
-          <AssetChart series={series} startMonth={condition.startMonth} goal={goal} />
+          {/* [RES-16] 이전 버전을 보는 중이면 안내 + 최신으로 */}
+          {!isViewingBase && viewing.no !== latest.no && (
+            <div className="future-result__version-banner">
+              V{viewing.no} 보는 중 · 최신은 V{latest.no} · 기존 플랜(V1) 선과 함께 비교 중
+              <button type="button" onClick={() => viewVersion(latest.no)}>
+                최신(V{latest.no})으로
+              </button>
+            </div>
+          )}
 
+          {/* [CHT-05·06] 버전 칩: 누르면 그 버전이 그래프에 표시됨 */}
+          {working.versions.length > 1 && (
+            <div className="future-result__versions" role="group" aria-label="버전 선택">
+              {working.versions.map((v) => (
+                <button
+                  key={v.no}
+                  type="button"
+                  className={`future-result__version${v.no === viewing.no ? " future-result__version--active" : ""}`}
+                  aria-pressed={v.no === viewing.no}
+                  onClick={() => viewVersion(v.no)}
+                >
+                  V{v.no} {v.title}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <AssetChart
+            series={series}
+            startMonth={condition.startMonth}
+            goal={goal}
+            seriesName={`V${viewing.no} ${viewing.title}`}
+            baseSeries={isViewingBase ? undefined : base.result.series}
+            previewSeries={previewSeries}
+          />
+
+          {/* [RES-11] 월 저축 슬라이더: 움직이는 중에는 점선 미리보기, 손을 떼면 새 버전으로 결과 갱신 */}
           <div className="future-result__saving">
-            매달 저축액
-            {/* TODO(feature/result): 점선 미리보기 슬라이더 (RES-09) */}
-            <input type="range" min={0} max={100} defaultValue={condition.monthlySaving} />
-            <span>{condition.monthlySaving.toLocaleString()}만원</span>
+            <label htmlFor="saving-slider">매달 저축액</label>
+            <input
+              id="saving-slider"
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={draftSaving ?? Math.min(condition.monthlySaving, 100)}
+              onChange={(e) => setDraftSaving(Number(e.target.value))}
+              onPointerUp={commitSaving}
+              // 키보드(←→)는 누를 때마다 버전이 생기지 않게, Enter나 칸을 벗어날 때(blur) 확정
+              onKeyUp={(e) => {
+                if (e.key === "Enter") commitSaving();
+              }}
+              onBlur={commitSaving}
+              aria-valuetext={`${(draftSaving ?? condition.monthlySaving).toLocaleString()}만원`}
+            />
+            <span>{(draftSaving ?? condition.monthlySaving).toLocaleString()}만원</span>
+            <small>0 ~ 100만원 · 움직이면 그래프에 점선으로 바로 보여요</small>
           </div>
 
           <div className="future-result__actions">
@@ -184,7 +270,7 @@ export function FutureResultPage() {
       {pendingEditStep && (
         <ConfirmModal
           title="입력을 수정할까요?"
-          description="수정하면 AI 대화로 만든 버전은 사라지고, 지금 보고 있는 버전을 기준으로 다시 시작해요."
+          description="수정하면 AI 대화나 슬라이더로 만든 버전은 사라지고, 지금 보고 있는 버전을 기준으로 다시 시작해요."
           confirmLabel="수정하기"
           onConfirm={() => goEdit(pendingEditStep)}
           onCancel={() => setPendingEditStep(null)}
