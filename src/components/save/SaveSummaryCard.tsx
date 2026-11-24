@@ -30,11 +30,10 @@ export function SaveSummaryCard({
   // 12개월 뒤 예상 (series[i] = i개월 뒤). 기간이 12개월보다 짧으면 마지막 달 값
   const afterMonths = Math.min(12, result.series.length - 1);
   const expected = result.series[afterMonths];
-  const baseExpected =
-    baseVersion.result.series[
-      Math.min(afterMonths, baseVersion.result.series.length - 1)
-    ];
-  const diffFromV1 = expected - baseExpected;
+  // V1도 "같은 시점(afterMonths개월 뒤)"의 금액과 비교. V1 기간이 더 짧아 그 시점이 없으면
+  // 다른 시점끼리 비교하게 되니 차액을 안 보여 줘요 (CodeRabbit 리뷰 반영)
+  const baseExpected: number | undefined = baseVersion.result.series[afterMonths];
+  const diffFromV1 = baseExpected === undefined ? undefined : expected - baseExpected;
 
   const shownEvents = condition.events.slice(0, MAX_EVENTS_SHOWN);
   const hiddenCount = condition.events.length - shownEvents.length;
@@ -83,7 +82,7 @@ export function SaveSummaryCard({
         <strong className="save-summary__expected-amount">
           {formatMoney(expected)}
         </strong>
-        {!isV1 && (
+        {!isV1 && diffFromV1 !== undefined && (
           <span
             className={`save-summary__diff save-summary__diff--${moneyTone(diffFromV1)}`}
           >
